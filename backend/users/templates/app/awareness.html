@@ -1,0 +1,902 @@
+{% extends "users/base.html" %}
+{% load static %}
+{% block content %}
+
+<style>
+    :root {
+        --cyber-primary: #0ea5e9;
+        --cyber-secondary: #6366f1;
+        --cyber-accent: #8b5cf6;
+        --cyber-danger: #ef4444;
+        --cyber-warning: #f59e0b;
+        --cyber-success: #10b981;
+        --cyber-info: #06b6d4;
+        --dark-bg: #0f172a;
+        --dark-card: #1e293b;
+        --dark-border: #334155;
+        --dark-text: #f1f5f9;
+        --dark-text-secondary: #94a3b8;
+        --gradient-primary: linear-gradient(135deg, #0ea5e9 0%, #6366f1 50%, #8b5cf6 100%);
+        --gradient-danger: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        --gradient-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        --gradient-warning: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        --gradient-card: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+        --shadow-glow: 0 0 30px rgba(14, 165, 233, 0.15);
+        --shadow-card: 0 10px 25px rgba(0, 0, 0, 0.3);
+        --shadow-hover: 0 15px 35px rgba(14, 165, 233, 0.25);
+        --radius-lg: 20px;
+        --radius-md: 12px;
+        --radius-sm: 8px;
+        --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    body {
+        font-family: 'Inter', sans-serif;
+        background: var(--dark-bg);
+        color: var(--dark-text);
+        min-height: 100vh;
+        padding: 20px;
+        position: relative;
+        overflow-x: hidden;
+    }
+
+    /* Animated Background Grid */
+    body::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: 
+            linear-gradient(rgba(14, 165, 233, 0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(14, 165, 233, 0.03) 1px, transparent 1px);
+        background-size: 60px 60px;
+        z-index: -1;
+        pointer-events: none;
+        animation: gridMove 30s linear infinite;
+    }
+
+    @keyframes gridMove {
+        0% { transform: translate(0, 0); }
+        100% { transform: translate(60px, 60px); }
+    }
+
+    .awareness-container {
+        max-width: 1400px;
+        margin: 40px auto;
+    }
+
+    /* Hero Header */
+    .awareness-hero {
+        background: var(--gradient-card);
+        border: 1px solid var(--dark-border);
+        border-radius: var(--radius-lg);
+        padding: 50px;
+        margin-bottom: 40px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: var(--shadow-card);
+    }
+
+    .awareness-hero::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--gradient-primary);
+    }
+
+    .awareness-hero::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 300px;
+        height: 300px;
+        background: radial-gradient(circle, rgba(239, 68, 68, 0.1) 0%, transparent 70%);
+        z-index: 0;
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 1;
+    }
+
+    .awareness-title {
+        font-size: 3.2rem;
+        font-weight: 800;
+        background: var(--gradient-primary);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 20px;
+        font-family: 'Poppins', sans-serif;
+        letter-spacing: -0.5px;
+        line-height: 1.1;
+    }
+
+    .awareness-subtitle {
+        font-size: 1.3rem;
+        color: var(--dark-text-secondary);
+        margin-bottom: 30px;
+        max-width: 800px;
+        line-height: 1.6;
+    }
+
+    /* Stats Banner */
+    .stats-banner {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 25px;
+        margin: 40px 0;
+    }
+
+    .stat-card {
+        background: rgba(30, 41, 59, 0.7);
+        border: 1px solid var(--dark-border);
+        border-radius: var(--radius-md);
+        padding: 25px;
+        transition: var(--transition);
+        backdrop-filter: blur(10px);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--gradient-danger);
+        opacity: 0;
+        transition: var(--transition);
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+        border-color: var(--cyber-danger);
+        box-shadow: 0 10px 25px rgba(239, 68, 68, 0.2);
+    }
+
+    .stat-card:hover::before {
+        opacity: 1;
+    }
+
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 800;
+        background: var(--gradient-danger);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        line-height: 1;
+        margin-bottom: 10px;
+    }
+
+    .stat-text {
+        color: var(--dark-text-secondary);
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+
+    /* Content Sections */
+    .content-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 30px;
+        margin: 40px 0;
+    }
+
+    .content-card {
+        background: var(--gradient-card);
+        border: 1px solid var(--dark-border);
+        border-radius: var(--radius-lg);
+        padding: 35px;
+        transition: var(--transition);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .content-card:hover {
+        transform: translateY(-5px);
+        border-color: var(--cyber-primary);
+        box-shadow: var(--shadow-card);
+    }
+
+    .content-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--gradient-primary);
+        opacity: 0;
+        transition: var(--transition);
+    }
+
+    .content-card:hover::before {
+        opacity: 1;
+    }
+
+    .card-header {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 25px;
+    }
+
+    .card-icon {
+        width: 60px;
+        height: 60px;
+        background: var(--gradient-primary);
+        border-radius: var(--radius-md);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        color: white;
+        flex-shrink: 0;
+    }
+
+    .card-icon.danger {
+        background: var(--gradient-danger);
+    }
+
+    .card-icon.warning {
+        background: var(--gradient-warning);
+    }
+
+    .card-icon.success {
+        background: var(--gradient-success);
+    }
+
+    .card-title {
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: white;
+        margin: 0;
+    }
+
+    .card-content {
+        color: var(--dark-text-secondary);
+        line-height: 1.7;
+    }
+
+    /* Fraud Types List */
+    .fraud-types {
+        margin: 30px 0;
+    }
+
+    .fraud-type-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 15px;
+        padding: 20px;
+        background: rgba(30, 41, 59, 0.5);
+        border: 1px solid var(--dark-border);
+        border-radius: var(--radius-md);
+        margin-bottom: 15px;
+        transition: var(--transition);
+    }
+
+    .fraud-type-item:hover {
+        background: rgba(239, 68, 68, 0.1);
+        border-color: var(--cyber-danger);
+        transform: translateX(10px);
+    }
+
+    .fraud-icon {
+        width: 40px;
+        height: 40px;
+        background: rgba(239, 68, 68, 0.2);
+        border-radius: var(--radius-sm);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--cyber-danger);
+        font-size: 1.2rem;
+        flex-shrink: 0;
+    }
+
+    .fraud-content h4 {
+        color: white;
+        margin: 0 0 8px 0;
+        font-size: 1.1rem;
+    }
+
+    .fraud-content p {
+        color: var(--dark-text-secondary);
+        margin: 0;
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+
+    /* Prevention Steps */
+    .prevention-steps {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 25px;
+        margin: 40px 0;
+    }
+
+    .prevention-card {
+        background: rgba(30, 41, 59, 0.7);
+        border: 1px solid var(--dark-border);
+        border-radius: var(--radius-md);
+        padding: 25px;
+        text-align: center;
+        transition: var(--transition);
+    }
+
+    .prevention-card:hover {
+        background: rgba(16, 185, 129, 0.1);
+        border-color: var(--cyber-success);
+        transform: translateY(-5px);
+    }
+
+    .step-number {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        background: var(--gradient-success);
+        color: white;
+        border-radius: 50%;
+        font-weight: 700;
+        margin-bottom: 20px;
+    }
+
+    .prevention-card h4 {
+        color: white;
+        margin-bottom: 15px;
+        font-size: 1.2rem;
+    }
+
+    .prevention-card p {
+        color: var(--dark-text-secondary);
+        font-size: 0.95rem;
+        line-height: 1.6;
+    }
+
+    /* Emergency Alert */
+    .emergency-alert {
+      background: linear-gradient(135deg, rgba(17, 16, 16, 0.1) 0%, rgba(17, 16, 16, 0.05) 100%);
+/* Emerald green to dark green */
+        border: 2px solid rgba(15, 15, 15, 0.3);
+        border-radius: var(--radius-lg);
+        padding: 40px;
+        margin: 50px 0;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .emergency-alert::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--gradient-danger);
+    }
+
+    .alert-header {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 25px;
+    }
+
+    .alert-icon {
+        font-size: 2.5rem;
+        color: var(--cyber-danger);
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+    }
+
+    .alert-title {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: white;
+        margin: 0;
+    }
+
+    .alert-content {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 30px;
+    }
+
+    .contact-info {
+        background: rgba(27, 1, 49, 0.5);
+        border-radius: var(--radius-md);
+        padding: 20px;
+    }
+
+    .contact-info h5 {
+        color: white;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .contact-info ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .contact-info li {
+        color: var(--dark-text-secondary);
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .contact-info li i {
+        color: var(--cyber-danger);
+    }
+
+    /* Footer CTA */
+    .footer-cta {
+        text-align: center;
+        margin-top: 60px;
+        padding-top: 40px;
+        border-top: 1px solid var(--dark-border);
+    }
+
+    .cta-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: white;
+        margin-bottom: 20px;
+    }
+
+    .cta-buttons {
+        display: flex;
+        gap: 20px;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 30px;
+    }
+
+    .cta-btn {
+        padding: 16px 40px;
+        border-radius: var(--radius-md);
+        font-weight: 600;
+        font-size: 1.1rem;
+        transition: var(--transition);
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        text-decoration: none;
+    }
+
+    .cta-btn-primary {
+        background: var(--gradient-primary);
+        color: white;
+    }
+
+    .cta-btn-primary:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-hover);
+    }
+
+    .cta-btn-outline {
+        background: transparent;
+        color: var(--cyber-primary);
+        border: 2px solid var(--cyber-primary);
+    }
+
+    .cta-btn-outline:hover {
+        background: rgba(14, 165, 233, 0.1);
+        transform: translateY(-3px);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .awareness-container {
+            padding: 0 15px;
+        }
+        
+        .awareness-hero {
+            padding: 30px;
+        }
+        
+        .awareness-title {
+            font-size: 2.5rem;
+        }
+        
+        .content-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .cta-buttons {
+            flex-direction: column;
+        }
+        
+        .cta-btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
+
+<div class="awareness-container">
+    <!-- Hero Section -->
+    <div class="awareness-hero">
+        <div class="hero-content">
+            <h1 class="awareness-title">UPI Fraud Awareness & Prevention</h1>
+            <p class="awareness-subtitle">
+                Comprehensive guide to understanding, identifying, and preventing UPI fraud in the digital age.
+                Stay informed and protect your financial transactions with our expert security insights.
+            </p>
+            
+            <div class="stats-banner">
+                <div class="stat-card">
+                    <div class="stat-number">₹5,800 Cr</div>
+                    <div class="stat-text">Estimated UPI fraud losses in India (2023)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">+42%</div>
+                    <div class="stat-text">Increase in fraud cases year-over-year</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">78%</div>
+                    <div class="stat-text">Of frauds target first-time UPI users</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">3.2 Sec</div>
+                    <div class="stat-text">Average time to compromise credentials</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- What is UPI Fraud Section -->
+    <div class="content-grid">
+        <div class="content-card">
+            <div class="card-header">
+                <div class="card-icon danger">
+                    <i class="bi-exclamation-triangle"></i>
+                </div>
+                <h3 class="card-title">What is UPI Fraud?</h3>
+            </div>
+            <div class="card-content">
+                <p>
+                    UPI fraud refers to unauthorized transactions or financial scams conducted through 
+                    the Unified Payments Interface system. Fraudsters use sophisticated techniques to 
+                    steal money, personal information, or banking credentials from unsuspecting users.
+                </p>
+                <p>
+                    These frauds typically occur when users are tricked into sharing sensitive information 
+                    or when malicious software compromises their devices. With UPI's real-time transaction 
+                    capabilities, fraudsters can instantly transfer funds once they gain access.
+                </p>
+            </div>
+        </div>
+
+        <div class="content-card">
+            <div class="card-header">
+                <div class="card-icon">
+                    <i class="bi-calendar-exclamation"></i>
+                </div>
+                <h3 class="card-title">When Fraud Occurs</h3>
+            </div>
+            <div class="card-content">
+                <p>
+                    UPI frauds typically happen during vulnerable moments when users are less cautious 
+                    or when security measures are temporarily bypassed.
+                </p>
+                <div class="fraud-types">
+                    <div class="fraud-type-item">
+                        <div class="fraud-icon">
+                            <i class="bi-phone"></i>
+                        </div>
+                        <div class="fraud-content">
+                            <h4>During Transactions</h4>
+                            <p>When entering UPI PIN or approving payments</p>
+                        </div>
+                    </div>
+                    <div class="fraud-type-item">
+                        <div class="fraud-icon">
+                            <i class="bi-link"></i>
+                        </div>
+                        <div class="fraud-content">
+                            <h4>Clicking Links</h4>
+                            <p>Opening suspicious links in SMS/WhatsApp</p>
+                        </div>
+                    </div>
+                    <div class="fraud-type-item">
+                        <div class="fraud-icon">
+                            <i class="bi-qr-code"></i>
+                        </div>
+                        <div class="fraud-content">
+                            <h4>QR Code Scans</h4>
+                            <p>Scanning malicious QR codes for payments</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Common Fraud Types -->
+    <div class="content-card">
+        <div class="card-header">
+            <div class="card-icon warning">
+                <i class="bi-shield-exclamation"></i>
+            </div>
+            <h3 class="card-title">Common Types of UPI Frauds</h3>
+        </div>
+        <div class="card-content">
+            <div class="fraud-types">
+                <div class="fraud-type-item">
+                    <div class="fraud-icon">
+                        <i class="bi-link-45deg"></i>
+                    </div>
+                    <div class="fraud-content">
+                        <h4>Phishing Scams</h4>
+                        <p>Fake websites/apps mimicking legitimate banking portals to steal credentials</p>
+                    </div>
+                </div>
+                <div class="fraud-type-item">
+                    <div class="fraud-icon">
+                        <i class="bi-phone-vibrate"></i>
+                    </div>
+                    <div class="fraud-content">
+                        <h4>Remote Access Fraud</h4>
+                        <p>Fraudsters gain control of devices through screen-sharing apps</p>
+                    </div>
+                </div>
+                <div class="fraud-type-item">
+                    <div class="fraud-icon">
+                        <i class="bi-person-badge"></i>
+                    </div>
+                    <div class="fraud-content">
+                        <h4>SIM Swap Fraud</h4>
+                        <p>Duplicating SIM cards to intercept OTPs and bypass authentication</p>
+                    </div>
+                </div>
+                <div class="fraud-type-item">
+                    <div class="fraud-icon">
+                        <i class="bi-qr-code-scan"></i>
+                    </div>
+                    <div class="fraud-content">
+                        <h4>QR Code Fraud</h4>
+                        <p>Malicious QR codes redirecting payments to fraudster accounts</p>
+                    </div>
+                </div>
+                <div class="fraud-type-item">
+                    <div class="fraud-icon">
+                        <i class="bi-person-plus"></i>
+                    </div>
+                    <div class="fraud-content">
+                        <h4>Social Engineering</h4>
+                        <p>Impersonating bank officials or trusted contacts for information</p>
+                    </div>
+                </div>
+                <div class="fraud-type-item">
+                    <div class="fraud-icon">
+                        <i class="bi-app-indicator"></i>
+                    </div>
+                    <div class="fraud-content">
+                        <h4>App-based Frauds</h4>
+                        <p>Malicious apps with hidden charges or data theft capabilities</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Prevention Steps -->
+    <div class="content-card">
+        <div class="card-header">
+            <div class="card-icon success">
+                <i class="bi-shield-check"></i>
+            </div>
+            <h3 class="card-title">How to Protect Yourself</h3>
+        </div>
+        <div class="card-content">
+            <div class="prevention-steps">
+                <div class="prevention-card">
+                    <div class="step-number">1</div>
+                    <h4>Never Share Credentials</h4>
+                    <p>Your UPI PIN, OTP, and passwords should never be shared with anyone, including bank officials</p>
+                </div>
+                <div class="prevention-card">
+                    <div class="step-number">2</div>
+                    <h4>Verify Recipients</h4>
+                    <p>Always double-check the UPI ID and name before confirming any payment</p>
+                </div>
+                <div class="prevention-card">
+                    <div class="step-number">3</div>
+                    <h4>Avoid Unknown Links</h4>
+                    <p>Don't click on suspicious links received via SMS, email, or WhatsApp</p>
+                </div>
+                <div class="prevention-card">
+                    <div class="step-number">4</div>
+                    <h4>Secure Your Device</h4>
+                    <p>Use antivirus software and keep your operating system updated</p>
+                </div>
+                <div class="prevention-card">
+                    <div class="step-number">5</div>
+                    <h4>Monitor Transactions</h4>
+                    <p>Regularly check your bank statements and transaction history</p>
+                </div>
+                <div class="prevention-card">
+                    <div class="step-number">6</div>
+                    <h4>Use Official Apps</h4>
+                    <p>Only download banking and UPI apps from official app stores</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Emergency Alert -->
+    <div class="emergency-alert">
+        <div class="alert-header">
+            <i class="bi-exclamation-diamond alert-icon"></i>
+            <h3 class="alert-title"; style="color: #598879;">Immediate Action Required</h3>
+        </div>
+        <div class="alert-content">
+            <div class="contact-info">
+                <h5><i class="bi-telephone"></i> Emergency Contacts</h5>
+                <ul>
+                    <li><i class="bi-telephone-fill"></i> National Cyber Crime Helpline: 1930</li>
+                    <li><i class="bi-telephone-fill"></i> Banking Ombudsman: 14440</li>
+                    <li><i class="bi-envelope-fill"></i> RBI Grievance: crpc@rbi.org.in</li>
+                </ul>
+            </div>
+            <div class="contact-info">
+                <h5><i class="bi-lightning-charge"></i> If Fraud Occurs</h5>
+                <ul>
+                    <li><i class="bi-clock-fill"></i> Report immediately to your bank</li>
+                    <li><i class="bi-key-fill"></i> Change all passwords immediately</li>
+                    <li><i class="bi-phone-fill"></i> Block your UPI ID temporarily</li>
+                    <li><i class="bi-file-earmark-text-fill"></i> File police complaint online</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Historical Data & Trends -->
+    <div class="content-card">
+        <div class="card-header">
+            <div class="card-icon">
+                <i class="bi-graph-up-arrow"></i>
+            </div>
+            <h3 class="card-title">Fraud Trends & Historical Data</h3>
+        </div>
+        <div class="card-content">
+            <div class="fraud-types">
+                <div class="fraud-type-item">
+                    <div class="fraud-icon">
+                        <i class="bi-calendar-range"></i>
+                    </div>
+                    <div class="fraud-content">
+                        <h4>2023 Statistics</h4>
+                        <p>Over 95,000 UPI fraud cases reported with ₹5,800+ crores in losses</p>
+                    </div>
+                </div>
+                <div class="fraud-type-item">
+                    <div class="fraud-icon">
+                        <i class="bi-arrow-up-right"></i>
+                    </div>
+                    <div class="fraud-content">
+                        <h4>Growth Trends</h4>
+                        <p>42% year-over-year increase in digital payment frauds in India</p>
+                    </div>
+                </div>
+                <div class="fraud-type-item">
+                    <div class="fraud-icon">
+                        <i class="bi-phone"></i>
+                    </div>
+                    <div class="fraud-content">
+                        <h4>Common Targets</h4>
+                        <p>78% of victims are first-time UPI users aged 18-35 years</p>
+                    </div>
+                </div>
+                <div class="fraud-type-item">
+                    <div class="fraud-icon">
+                        <i class="bi-cash-coin"></i>
+                    </div>
+                    <div class="fraud-content">
+                        <h4>Average Loss</h4>
+                        <p>₹25,000 average amount lost per UPI fraud incident</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer CTA -->
+    <div class="footer-cta">
+        <h3 class="cta-title">Stay Protected, Stay Informed</h3>
+        <p style="color: var(--dark-text-secondary); max-width: 800px; margin: 0 auto 30px; line-height: 1.6;">
+            Knowledge is your best defense against UPI fraud. Regular awareness and caution 
+            can prevent 95% of digital payment frauds. Remember, legitimate organizations will 
+            never ask for your UPI PIN, password, or OTP.
+        </p>
+        
+        <div class="cta-buttons">
+            <a href="{% url 'prediction' %}" class="cta-btn cta-btn-primary">
+                <i class="bi-shield-check"></i> Check Transaction Safety
+            </a>
+            <a href="{% url 'Basic_report' %}" class="cta-btn cta-btn-outline">
+                <i class="bi-file-earmark-text"></i> View Fraud Reports
+            </a>
+            <a href="/" class="cta-btn cta-btn-outline">
+                <i class="bi-house"></i> Return to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add interactive animations
+        const cards = document.querySelectorAll('.content-card, .prevention-card, .fraud-type-item');
+        
+        cards.forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-5px)';
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = '';
+            });
+        });
+        
+        // Add counter animation for stats
+        const statNumbers = document.querySelectorAll('.stat-number');
+        statNumbers.forEach(stat => {
+            const originalText = stat.textContent;
+            stat.textContent = '0';
+            
+            let counter = 0;
+            const target = parseFloat(originalText.replace(/[^0-9.]/g, ''));
+            const suffix = originalText.replace(/[0-9.]/g, '');
+            const increment = target / 50;
+            
+            const updateCounter = () => {
+                if (counter < target) {
+                    counter += increment;
+                    stat.textContent = Math.floor(counter).toLocaleString() + suffix;
+                    setTimeout(updateCounter, 30);
+                } else {
+                    stat.textContent = originalText;
+                }
+            };
+            
+            // Start counter when in viewport
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        updateCounter();
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.5 });
+            
+            observer.observe(stat);
+        });
+    });
+</script>
+
+{% endblock content %}

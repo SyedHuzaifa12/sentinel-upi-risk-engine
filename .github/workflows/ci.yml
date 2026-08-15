@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Django system checks
+        working-directory: backend
+        env:
+          SECRET_KEY: ci-only-secret-key
+        run: python manage.py check
+
+      - name: Run tests
+        working-directory: backend
+        env:
+          SECRET_KEY: ci-only-secret-key
+        run: python manage.py test users
+
+      - name: Run generator tests
+        run: pytest ml/tests
+
+      - name: Run feature_lib tests
+        run: pytest feature_lib/tests

@@ -1,0 +1,172 @@
+{% extends "users/base.html" %}
+{% block title %}Profile Page{% endblock title %}
+{% block content %}
+<style>
+   /* General Body Styling */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #6d6d6d;
+}
+a{
+    font-size: 15px;
+}
+
+/* Profile Container Styling */
+.profile-container {
+    background-color: #f5bc80; /* Light gray background */
+    max-width: 800px;
+    width: 100%;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); /* 3D shadow effect */
+    text-align: center;
+    margin: 40px auto; /* Center horizontally and add some margin */
+}
+
+/* Profile Image Styling */
+.profile-image {
+    border-radius: 50%;
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    margin-bottom: 20px;
+    box-shadow: 0 0 0 4px #fff, 0 0 0 6px #ccc; /* White inner glow with gray border */
+}
+
+/* Form Styling */
+.form-content {
+    background-color: #fff;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Soft shadow */
+    margin-top: 20px;
+    text-align: left;
+    font-size: 13px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    font-weight: bold;
+    margin-bottom: 8px;
+    display: block;
+    font-size: 20px;
+    color: #492e2e;
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+/* Button Styling */
+.button-group {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.btn {
+    padding: 12px 24px;
+    font-size: 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin-right: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Button shadow */
+}
+
+.btn-primary {
+    background-color: #9e0000;
+    color: #fff;
+    border: none;
+}
+
+.btn-primary:hover {
+    background-color: #009e08;
+}
+
+.btn-secondary {
+    background-color: #008311;
+    color: #fff;
+    border: none;
+}
+
+.btn-secondary:hover {
+    background-color: #004d88;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .profile-container {
+        padding: 30px;
+        font-size: 13px;
+    }
+    .form-content {
+        padding: 20px;
+        
+    }
+    .profile-image {
+        width: 120px;
+        height: 120px;
+    }
+}
+
+
+
+
+</style>
+
+
+<div class="profile-container">
+    <h2 style="color: #ffffff;"><b>Your Profile</b></h2>
+    <img class="profile-image" src="{{ user.profile.avatar.url }}" alt="Profile Image">
+    {% if user_form.errors %}
+    <div class="alert alert-danger alert-dismissible" role="alert">
+        <div id="form_errors">
+            {% for key, value in user_form.errors.items %}
+                <strong>{{ value }}</strong>
+            {% endfor %}
+        </div>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+{% endif %}
+    <div class="form-content">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="username">Username:</label>
+                {{ user_form.username }}
+            </div>
+            <div class="form-group">
+                <label for="email">Email:</label>
+                {{ user_form.email }}
+            </div>
+            <hr>
+            <div class="form-group">
+                <label for="avatar">Change Avatar:</label>
+                {{ profile_form.avatar }}
+            </div>
+            <div class="form-group">
+                <label for="bio">Bio:</label>
+                {{ profile_form.bio }}
+            </div>
+            <div class="button-group">
+                <button type="submit" class="btn btn-primary" id="save-btn">Save Changes</button>
+                <button type="reset" class="btn btn-secondary" id="reset-btn">Reset</button>
+            </div>
+        </form>
+    </div>
+    {% if user_form.errors %}
+        <div class="alert alert-danger" role="alert">
+            <strong>Error:</strong> Please correct the form errors.
+        </div>
+    {% endif %}
+</div>
+{% endblock content %}

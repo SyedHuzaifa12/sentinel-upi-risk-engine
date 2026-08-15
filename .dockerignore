@@ -1,0 +1,11 @@
+.git
+.venv_inspect
+.venv_validate
+**/__pycache__
+*.pyc
+.env
+backend/.env
+backend/db.sqlite3.bak
+ml/notebooks/.ipynb_checkpoints
+docs/thesis
+*.md

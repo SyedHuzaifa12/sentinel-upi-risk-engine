@@ -1,0 +1,218 @@
+
+{% block title %}  {% endblock title%}
+
+
+
+
+
+
+
+  <style>
+    /* all */
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500&display=swap");
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Times New Roman', Times, serif;
+}
+
+:root {
+  --main-blue: #004e1a; /* Material blue */
+  --main-purple: #000000; /* Material red */
+  --main-grey: #bdbdbd; /* Grey */
+  --sub-grey: #f5f5f5; /* Light grey */
+}
+
+
+body {
+  display: flex;
+  min-height: 100vh;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, var(--main-blue), var(--main-purple));
+  padding: 20px;
+}
+
+.container {
+  max-width: 600px;
+  width: 100%;
+  background: #fff;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.container .title {
+  font-size: 32px;
+  font-weight: 600;
+  position: relative;
+  margin-bottom: 20px;
+  color: var(--main-blue);
+}
+
+.container .title::before {
+  content: "";
+  position: absolute;
+  height: 4px;
+  width: 60px;
+  background: linear-gradient(135deg, var(--main-blue), var(--main-purple));
+  bottom: -8px;
+  left: 0;
+}
+
+.container form .user__details {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+form .user__details .input__box {
+  width: calc(50% - 10px);
+  margin-bottom: 15px;
+}
+
+.user__details .input__box .details {
+  font-weight: 500;
+  margin-bottom: 8px;
+  color: var(--main-grey);
+}
+
+.user__details .input__box input {
+  height: 45px;
+  width: 100%;
+  outline: none;
+  border-radius: 6px;
+  border: 1px solid var(--main-grey);
+  padding-left: 16px;
+  font-size: 16px;
+  transition: border-color 0.3s ease;
+}
+
+.user__details .input__box input:focus,
+.user__details .input__box input:valid {
+  border-color: var(--main-purple);
+}
+
+form .gender__details .gender__title {
+  font-size: 20px;
+  font-weight: 500;
+  margin-bottom: 15px;
+  color: var(--main-blue);
+}
+
+form .gender__details .category {
+  display: flex;
+  width: 80%;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.gender__details .category label {
+  display: flex;
+  align-items: center;
+  color: var(--main-grey);
+}
+
+.gender__details .category .dot {
+  height: 18px;
+  width: 18px;
+  background: var(--sub-grey);
+  border-radius: 50%;
+  margin: 0 10px;
+  border: 3px solid transparent;
+  transition: all 0.3s ease;
+}
+
+#dot-1:checked ~ .category .one,
+#dot-2:checked ~ .category .two,
+#dot-3:checked ~ .category .three {
+  border-color: var(--sub-grey);
+  background: var(--main-purple);
+}
+
+form input[type="radio"] {
+  display: none;
+}
+
+form .button {
+  margin-top: 30px;
+}
+
+form .button input {
+  height: 50px;
+  width: 100%;
+  outline: none;
+  color: #fff;
+  border: none;
+  font-size: 18px;
+  font-weight: 500;
+  border-radius: 6px;
+  background: linear-gradient(135deg, var(--main-blue), var(--main-purple));
+  transition: background 0.3s ease;
+}
+
+form .button input:hover {
+  background: linear-gradient(-135deg, var(--main-blue), var(--main-purple));
+}
+
+@media only screen and (max-width: 584px) {
+  .container {
+    padding: 20px;
+  }
+
+  form .user__details .input__box {
+    width: 100%;
+    margin-bottom: 15px;
+  }
+
+  form .gender__details .category {
+    width: 100%;
+  }
+
+  .container form .user__details {
+    max-height: 280px;
+    overflow-y: auto;
+  }
+}
+  </style>
+
+  <div class="container">
+    <div class="title">Login</div>
+    {% if form.errors %}
+            <div class="alert alert-danger alert-dismissible" role="alert">
+                <div id="form_errors">
+                    {% for key, value in form.errors.items %}
+                    <strong>{{ value }}</strong>
+                    {% endfor %}
+                </div>
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            {% endif %}
+    <form method="POST">
+        {% csrf_token %}
+      <div class="user__details">
+        
+        <div class="input__box">
+          <span class="details">Username</span>
+          {{ form.username }}
+        </div>
+        
+        
+        <div class="input__box">
+          <span class="details"> Password</span>
+          {{ form.password }}
+        </div>
+  
+      </div>
+      
+      <div class="button">
+        <input type="submit" value="Submit">
+      </div>
+      <center><h5>Don't have an account yet? Create Account</h5><a href="{% url 'users-register' %}">Go to Register</a></center>
+    </form>
+  </div>

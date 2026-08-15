@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UPI prediction database · audit view</title>
+    <!-- Inter font - clean professional -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(160deg, #f4f9ff 0%, #e8f0f8 100%);
+            min-height: 100vh;
+            padding: 2.2rem 1.5rem;
+            color: #1c3144;
+            line-height: 1.5;
+        }
+
+        .database-container {
+            max-width: 1400px;
+            width: 100%;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(3px);
+            background: #ffffff;
+            border-radius: 2.2rem;
+            box-shadow: 
+                0 30px 50px -20px rgba(8,40,70,0.3),
+                0 8px 20px rgba(0,20,40,0.1),
+                inset 0 1px 1px rgba(255,255,255,0.7);
+            border: 1px solid rgba(255,255,255,0.8);
+            overflow: hidden;
+            padding: 2.5rem 2rem 2.8rem 2rem;
+        }
+
+        /* header section */
+        .db-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1.2rem 2rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .title-section {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .title-section i {
+            font-size: 2.5rem;
+            background: #ecf3fa;
+            padding: 16px;
+            border-radius: 28px;
+            color: #1b5380;
+            box-shadow: 0 8px 14px -8px #bbd2e6;
+        }
+
+        .title-section h2 {
+            font-weight: 600;
+            font-size: 2.2rem;
+            letter-spacing: -0.02em;
+            background: linear-gradient(145deg, #103753, #1b5b88);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stats-badge {
+            background: #e4eef9;
+            padding: 0.8rem 2rem;
+            border-radius: 60px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 500;
+            color: #1d4a73;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.02);
+            border: 1px solid #cbddec;
+        }
+
+        .stats-badge i {
+            color: #2770a8;
+        }
+
+        .action-bar {
+            display: flex;
+            gap: 1rem;
+            margin-left: auto;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1.5px solid #b8cfe5;
+            padding: 0.8rem 2rem;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1rem;
+            color: #1d4e79;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.2s;
+            text-decoration: none;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .btn-outline i {
+            font-size: 1rem;
+        }
+
+        .btn-outline:hover {
+            background: #dbeaf5;
+            border-color: #6396c2;
+            transform: translateY(-2px);
+        }
+
+        .btn-filled {
+            background: #164466;
+            border: none;
+            padding: 0.8rem 2rem;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1rem;
+            color: white;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 6px 14px rgba(20,70,100,0.4);
+            transition: all 0.2s;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .btn-filled i {
+            font-size: 1rem;
+        }
+
+        .btn-filled:hover {
+            background: #1f5a82;
+            transform: translateY(-2px);
+            box-shadow: 0 12px 18px -6px #123c57;
+        }
+
+        /* search / filter line (just design) */
+        .search-row {
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            background: white;
+            padding: 0.7rem 1.5rem;
+            border-radius: 60px;
+            border: 1.5px solid #d5e2f0;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 260px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+        }
+
+        .search-box i {
+            color: #7f9ec0;
+        }
+
+        .search-box input {
+            border: none;
+            background: transparent;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            width: 100%;
+            outline: none;
+            color: #1c3a57;
+        }
+
+        .search-box input::placeholder {
+            color: #9bb5d3;
+        }
+
+        .filter-chip {
+            background: white;
+            border: 1.5px solid #d5e2f0;
+            border-radius: 40px;
+            padding: 0.5rem 1.5rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #1b4a72;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: default;
+        }
+
+        .filter-chip i {
+            color: #2870aa;
+        }
+
+        /* table wrapper – horizontal scroll on small, but clean */
+        .table-wrapper {
+            border-radius: 24px;
+            border: 1px solid #e3ecf5;
+            background: white;
+            overflow-x: auto;
+            box-shadow: 0 8px 18px -10px rgba(20,50,80,0.1);
+            margin-top: 1rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1300px;  /* ensures all columns visible; scroll if needed */
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+
+        th {
+            background: #f2f8ff;
+            color: #0f3b5c;
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            padding: 1.2rem 0.8rem;
+            border-bottom: 2px solid #c9ddef;
+            text-align: left;
+        }
+
+        td {
+            padding: 1rem 0.8rem;
+            border-bottom: 1px solid #e6eef7;
+            color: #1e3c58;
+            font-weight: 450;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr:hover td {
+            background-color: #f6fafe;
+            transition: background 0.15s;
+        }
+
+        /* specific column alignment */
+        td:nth-child(1), td:nth-child(2), td:nth-child(7), td:nth-child(8) {
+            font-weight: 500;
+            color: #133145;
+        }
+
+        /* prediction badge style */
+        .pred-badge {
+            display: inline-block;
+            padding: 0.35rem 1.2rem;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-align: center;
+            min-width: 70px;
+            letter-spacing: 0.02em;
+        }
+
+        .pred-fraud {
+            background: #fde7e9;
+            color: #b11f2e;
+            border: 1px solid #fbc1c7;
+        }
+
+        .pred-safe {
+            background: #e2f3e8;
+            color: #1a6e3b;
+            border: 1px solid #b2dfc4;
+        }
+
+        .pred-unknown {
+            background: #ecf0f5;
+            color: #4f6587;
+        }
+
+        /* yes/no styling inside table */
+        .yesno {
+            font-weight: 500;
+        }
+
+        .yesno.yes {
+            color: #c0392b;
+        }
+
+        .yesno.no {
+            color: #1f7840;
+        }
+
+        /* numeric monospace hint */
+        .numeric {
+            font-family: 'Inter', monospace;
+            font-weight: 500;
+        }
+
+        /* footer stats */
+        .db-footer {
+            margin-top: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #3f6182;
+            font-size: 0.9rem;
+        }
+
+        .pagination {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .page-dot {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: white;
+            border: 1.5px solid #ccdeef;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: #1d4e79;
+            cursor: default;
+        }
+
+        .page-dot.active {
+            background: #164466;
+            border-color: #164466;
+            color: white;
+        }
+
+        /* responsive */
+        @media (max-width: 700px) {
+            .db-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .action-bar {
+                margin-left: 0;
+            }
+            .database-container {
+                padding: 1.5rem 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="database-container">
+    <!-- header with title & actions -->
+    <div class="db-header">
+        <div class="title-section">
+            <i class="fas fa-database"></i>
+            <h2>UPI prediction records</h2>
+        </div>
+        <div class="stats-badge">
+            <i class="fas fa-chart-simple"></i>
+            <span>{{ user_db|length }} transactions · last updated just now</span>
+        </div>
+        <div class="action-bar">
+            <button class="btn-outline" onclick="location.href='{% url 'prediction' %}'">
+                <i class="fas fa-arrow-left"></i> New analysis
+            </button>
+            <button class="btn-filled" onclick="location.href='{% url 'database' %}'">
+                <i class="fas fa-rotate-right"></i> Refresh
+            </button>
+        </div>
+    </div>
+
+    <!-- subtle search/filter line (decorative) -->
+    <div class="search-row">
+        <div class="search-box">
+            <i class="fas fa-magnifying-glass"></i>
+            <input type="text" placeholder="Search by amount, fraud type ... (demo)">
+        </div>
+        <div class="filter-chip">
+            <i class="fas fa-filter"></i> All predictions
+        </div>
+        <div class="filter-chip">
+            <i class="fas fa-calendar"></i> Last 30 days
+        </div>
+    </div>
+
+    <!-- table wrapper for horizontal scroll if needed -->
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>Avg amount (day)</th>
+                    <th>Transaction amt</th>
+                    <th>Declined?</th>
+                    <th>Declines today</th>
+                    <th>Foreign tx</th>
+                    <th>High‑risk country</th>
+                    <th>Daily chbk avg</th>
+                    <th>6‑month chbk avg</th>
+                    <th>6‑month chbk freq</th>
+                    <th>Prediction</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in user_db %}
+                <tr>
+                    <td class="numeric">{{ row.AverageAmountTransactionDay }}</td>
+                    <td class="numeric">{{ row.TransactionAmount }}</td>
+                    <td>
+                        {% if row.Is_declined == "Y" or row.Is_declined == "y" %}
+                            <span class="yesno yes"><i class="fas fa-times-circle" style="color:#b63e32;"></i> Y</span>
+                        {% elif row.Is_declined == "N" or row.Is_declined == "n" %}
+                            <span class="yesno no"><i class="fas fa-check-circle" style="color:#1f7840;"></i> N</span>
+                        {% else %}
+                            {{ row.Is_declined }}
+                        {% endif %}
+                    </td>
+                    <td class="numeric">{{ row.TotalNumberOfDeclinesDay }}</td>
+                    <td>
+                        {% if row.isForeignTransaction == "Y" or row.isForeignTransaction == "y" %}
+                            <span class="yesno yes"><i class="fas fa-flag"></i> Y</span>
+                        {% elif row.isForeignTransaction == "N" or row.isForeignTransaction == "n" %}
+                            <span class="yesno no"><i class="fas fa-home"></i> N</span>
+                        {% else %}
+                            {{ row.isForeignTransaction }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if row.isHighRiskCountry == "Y" or row.isHighRiskCountry == "y" %}
+                            <span class="yesno yes"><i class="fas fa-exclamation-triangle"></i> Y</span>
+                        {% elif row.isHighRiskCountry == "N" or row.isHighRiskCountry == "n" %}
+                            <span class="yesno no"><i class="fas fa-shield"></i> N</span>
+                        {% else %}
+                            {{ row.isHighRiskCountry }}
+                        {% endif %}
+                    </td>
+                    <td class="numeric">{{ row.DailyChargebackAvgAmt }}</td>
+                    <td class="numeric">{{ row.Six_MonthAvgChbkAmt }}</td>
+                    <td class="numeric">{{ row.Six_MonthChbkFreq }}</td>
+                    <td>
+                        {% if row.Prediction == "Y" or row.Prediction == "y" or row.Prediction == "Yes" or row.Prediction == "FRAUD" %}
+                            <span class="pred-badge pred-fraud"><i class="fas fa-exclamation-circle"></i> FRAUD</span>
+                        {% elif row.Prediction == "N" or row.Prediction == "n" or row.Prediction == "No" %}
+                            <span class="pred-badge pred-safe"><i class="fas fa-check-circle"></i> SAFE</span>
+                        {% else %}
+                            <span class="pred-badge pred-unknown">{{ row.Prediction }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="10" style="text-align: center; padding: 3rem; color: #748ea8;">
+                        <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
+                        No transaction records found.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- footer with summary and pagination (decorative) - FIXED: removed invalid increment tag -->
+    <div class="db-footer">
+        <div>
+            <i class="fas fa-clipboard-list"></i> 
+            <strong>{{ user_db|length }} records</strong> · 
+            {% with fraud_count=0 %}
+                {# Using Django's built-in template filters to count fraud records safely #}
+                {% for row in user_db %}
+                    {% if row.Prediction == "Y" or row.Prediction == "y" or row.Prediction == "Yes" or row.Prediction == "FRAUD" %}
+                        {# This loop is just for counting, but we can't increment in Django templates.
+                           Instead, we'll use the with block to track the count via forloop.counter0.
+                           But that's complex - we'll just show a placeholder count and explain below. #}
+                    {% endif %}
+                {% endfor %}
+            {% endwith %}
+            {% comment %} 
+                Since Django templates don't support increment operations, we need to either:
+                1. Pass a pre-calculated fraud_count from the view, or
+                2. Use the |add filter with a placeholder value
+                
+                For now showing a decorative count based on filtered data - 
+                in a real app, you'd pass fraud_count from the view context.
+            {% endcomment %}
+            <span style="margin-left: 8px; background:#fce9e9; padding:0.2rem 0.8rem; border-radius:30px;">
+                <i class="fas fa-flag" style="color:#b63e32;"></i> 
+                {% with fraud_total=0 %}
+                    {% for row in user_db %}
+                        {% if row.Prediction == "Y" or row.Prediction == "y" or row.Prediction == "Yes" or row.Prediction == "FRAUD" %}
+                            {# Use forloop.counter to track position - but this is messy #}
+                            {% if forloop.last %}
+                                <span>{{ forloop.counter }} fraud alert{{ forloop.counter|pluralize }}</span>
+                            {% endif %}
+                        {% endif %}
+                    {% empty %}
+                        <span>0 fraud alerts</span>
+                    {% endfor %}
+                {% endwith %}
+                {% comment %} 
+                    Alternative: if you pass fraud_count from views.py, use:
+                    {{ fraud_count }} fraud alert{{ fraud_count|pluralize }}
+                {% endcomment %}
+                {# Placeholder: using length|add filter to approximate - replace with actual context variable #}
+                <span id="fraud-counter">0 fraud alerts</span>
+                <script>
+                    // Quick client-side count to fix display without backend changes
+                    (function() {
+                        const tableRows = document.querySelectorAll('tbody tr');
+                        let fraudCount = 0;
+                        tableRows.forEach(row => {
+                            const lastCell = row.cells[9]; // Prediction column index 9
+                            if (lastCell && lastCell.textContent.includes('FRAUD')) {
+                                fraudCount++;
+                            }
+                        });
+                        document.getElementById('fraud-counter').textContent = fraudCount + ' fraud alert' + (fraudCount !== 1 ? 's' : '');
+                    })();
+                </script>
+            </span>
+        </div>
+        <div class="pagination">
+            <div class="page-dot active">1</div>
+            <div class="page-dot">2</div>
+            <div class="page-dot">3</div>
+            <div class="page-dot">4</div>
+        </div>
+    </div>
+
+    <!-- subtle export hint (design) -->
+    <div style="margin-top: 1rem; text-align: right; font-size:0.85rem; color:#55799b;">
+        <i class="fas fa-download"></i> Export CSV (demo)
+    </div>
+</div>
+
+<!-- tiny script to ensure fraud counter works (added above) -->
+</body>
+</html>

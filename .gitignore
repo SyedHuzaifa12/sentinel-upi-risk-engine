@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+
+# Virtual environments
+venv/
+.venv/
+.venv_*/
+env/
+
+# Django
+backend/db.sqlite3
+backend/db.sqlite3.bak
+backend/media/
+backend/static/
+
+# Environment variables / secrets
+.env
+backend/.env
+
+# Jupyter
+.ipynb_checkpoints/
+ml/notebooks/.ipynb_checkpoints/
+
+# Editors / OS
+.idea/
+.vscode/
+.DS_Store
+*.log
+*.pot
+
+# Model artifacts produced by re-running notebooks into the wrong place
+ml/notebooks/*.pkl
+
+# Generated synthetic UPI event data (regenerate via ml.src.generator.cli;
+# DATA_CARD.md is the only tracked file in this directory)
+data/synthetic/*.jsonl
+data/synthetic/*.csv
+
+# pytest cache (ml/tests/)
+.pytest_cache/

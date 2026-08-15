@@ -1,0 +1,680 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}UPI Fraud Detection{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-dark: #0a1929;
+            --primary-blue: #1a56db;
+            --cyber-teal: #00d4aa;
+            --cyber-purple: #8b5cf6;
+            --warning-orange: #f59e0b;
+            --danger-red: #ef4444;
+            --success-green: #10b981;
+            --light-bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+            --gradient-main: linear-gradient(135deg, #1a56db 0%, #0a1929 100%);
+            --gradient-accent: linear-gradient(135deg, #00d4aa 0%, #8b5cf6 100%);
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 10px 25px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 20px 40px rgba(0, 0, 0, 0.1);
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--light-bg);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Cyber Security Pattern Overlay */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(26, 86, 219, 0.03) 0%, transparent 20%),
+                radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.03) 0%, transparent 20%),
+                radial-gradient(circle at 50% 80%, rgba(0, 212, 170, 0.03) 0%, transparent 20%);
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        /* Navbar Styles - Cyber Security Theme */
+        .navbar {
+            background: var(--gradient-main);
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow-lg);
+            padding: 1rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .navbar::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 2px;
+            background: var(--gradient-accent);
+            animation: scanline 3s linear infinite;
+        }
+        
+        @keyframes scanline {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+        
+        .navbar-brand {
+            color: white !important;
+            font-weight: 700;
+            font-size: 1.8rem;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: var(--transition);
+            position: relative;
+            padding: 8px 16px;
+            border-radius: var(--radius-sm);
+        }
+        
+        .navbar-brand:hover {
+            transform: translateY(-2px);
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .brand-icon {
+            color: var(--cyber-teal);
+            font-size: 1.8rem;
+            filter: drop-shadow(0 0 5px rgba(0, 212, 170, 0.5));
+        }
+        
+        .brand-text {
+            background: linear-gradient(to right, #fff, var(--cyber-teal));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .navbar-toggler {
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 0.5rem;
+            border-radius: var(--radius-sm);
+        }
+        
+        .navbar-toggler:focus {
+            box-shadow: 0 0 0 2px rgba(0, 212, 170, 0.5);
+        }
+        
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.9%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+        
+        .navbar-nav {
+            gap: 8px;
+        }
+        
+        .nav-item {
+            position: relative;
+        }
+        
+        .nav-link {
+            color: rgba(255, 255, 255, 0.9) !important;
+            font-weight: 500;
+            padding: 10px 18px !important;
+            border-radius: var(--radius-sm);
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .nav-link::before {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--gradient-accent);
+            transition: var(--transition);
+        }
+        
+        .nav-link:hover::before,
+        .nav-link.active::before {
+            width: 100%;
+        }
+        
+        .nav-link:hover,
+        .nav-link.active {
+            color: white !important;
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-2px);
+        }
+        
+        .nav-link i {
+            font-size: 1.2rem;
+            width: 24px;
+            text-align: center;
+        }
+        
+        /* Dropdown Styles */
+        .dropdown-menu {
+            background: var(--card-bg);
+            border: none;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-lg);
+            padding: 8px 0;
+            margin-top: 10px !important;
+            animation: dropdownFade 0.3s ease;
+            border: 1px solid var(--border-color);
+        }
+        
+        @keyframes dropdownFade {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .dropdown-item {
+            color: var(--text-primary);
+            padding: 12px 20px;
+            font-weight: 500;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .dropdown-item:hover {
+            background: linear-gradient(to right, rgba(26, 86, 219, 0.08), rgba(0, 212, 170, 0.08));
+            color: var(--primary-blue);
+            padding-left: 24px;
+        }
+        
+        /* Welcome Badge */
+        .welcome-badge {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 8px 18px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            transition: var(--transition);
+        }
+        
+        .welcome-badge:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+        
+        .welcome-badge i {
+            color: var(--cyber-teal);
+        }
+        
+        /* Main Content Container */
+        .main-container {
+            background: var(--card-bg);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            padding: 2.5rem;
+            margin-top: 2.5rem;
+            margin-bottom: 2.5rem;
+            min-height: calc(100vh - 250px);
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+            flex: 1;
+        }
+        
+        .main-container::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(26, 86, 219, 0.05) 0%, transparent 70%);
+            z-index: 0;
+        }
+        
+        /* Alert Messages */
+        .alert-container {
+            margin-bottom: 2rem;
+        }
+        
+        .alert {
+            border-radius: var(--radius-md);
+            border: none;
+            box-shadow: var(--shadow-sm);
+            padding: 1.2rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+            overflow: hidden;
+            border-left: 4px solid transparent;
+        }
+        
+        .alert::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: currentColor;
+            opacity: 0.05;
+            z-index: -1;
+        }
+        
+        .alert-success {
+            border-left-color: var(--success-green);
+            color: #065f46;
+        }
+        
+        .alert-danger, .alert-error {
+            border-left-color: var(--danger-red);
+            color: #991b1b;
+        }
+        
+        .alert-warning {
+            border-left-color: var(--warning-orange);
+            color: #92400e;
+        }
+        
+        .alert-info {
+            border-left-color: var(--primary-blue);
+            color: #1e40af;
+        }
+        
+        .alert-dismissible .close {
+            padding: 0.75rem 1.25rem;
+            color: inherit;
+            opacity: 0.7;
+        }
+        
+        /* Footer */
+        .footer {
+            background: var(--gradient-main);
+            color: white;
+            padding: 2rem 0;
+            margin-top: auto;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .footer::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: var(--gradient-accent);
+        }
+        
+        .footer-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .footer-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 600;
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .footer-text {
+            opacity: 0.9;
+            font-size: 0.95rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 992px) {
+            .navbar-nav {
+                padding: 1rem 0;
+                gap: 5px;
+            }
+            
+            .nav-item {
+                width: 100%;
+            }
+            
+            .nav-link {
+                justify-content: center;
+            }
+            
+            .welcome-badge {
+                margin: 1rem auto;
+                width: fit-content;
+            }
+            
+            .main-container {
+                padding: 1.8rem;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .main-container {
+                padding: 1.5rem;
+                margin-top: 1.5rem;
+                margin-bottom: 1.5rem;
+            }
+            
+            .navbar-brand {
+                font-size: 1.5rem;
+            }
+        }
+        
+        /* Active State Enhancement */
+        .nav-link.active {
+            background: rgba(0, 212, 170, 0.15);
+            color: white !important;
+        }
+        
+        /* Scroll Effect */
+        .navbar.scrolled {
+            padding: 0.7rem 0;
+            backdrop-filter: blur(15px);
+            background: rgba(10, 25, 41, 0.95);
+        }
+        
+        /* Notification Badge */
+        .nav-badge {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: var(--danger-red);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            box-shadow: 0 2px 5px rgba(239, 68, 68, 0.3);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        /* Utility Classes */
+        .text-gradient {
+            background: var(--gradient-accent);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .bg-gradient {
+            background: var(--gradient-main);
+        }
+        
+        .cyber-border {
+            position: relative;
+            border: 1px solid transparent;
+            background-clip: padding-box, border-box;
+            background-origin: padding-box, border-box;
+            background-image: linear-gradient(var(--card-bg), var(--card-bg)), 
+                              var(--gradient-accent);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-shield-alt brand-icon"></i>
+                <span class="brand-text">FRAUDGUARD</span>
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain" aria-controls="navbarMain" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarMain">
+                <ul class="navbar-nav ms-auto align-items-lg-center">
+                    {% if user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">
+                            <i class="fas fa-home"></i> Home
+                        </a>
+                    </li>
+                    
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="reportDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-chart-bar"></i> Reports
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="reportDropdown">
+                            <li><a class="dropdown-item" href="{% url 'Basic_report' %}">
+                                <i class="fas fa-file-alt"></i> Basic Report
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'Metrics_report' %}">
+                                <i class="fas fa-chart-line"></i> Metrics Report
+                            </a></li>
+                        </ul>
+                    </li>
+                    
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'prediction' %}">
+                            <i class="fas fa-cogs"></i> Model
+                        </a>
+                    </li>
+                    
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'database' %}">
+                            <i class="fas fa-database"></i> Database
+                        </a>
+                    </li>
+                    
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'users-profile' %}">
+                            <i class="fas fa-user-circle"></i> Profile
+                        </a>
+                    </li>
+                    
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'logout_view' %}">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </a>
+                    </li>
+                    
+                    <li class="nav-item">
+                        <div class="welcome-badge">
+                            <i class="fas fa-user-check"></i>
+                            <span>Welcome, {{user.first_name.title|default:'Guest'}}</span>
+                        </div>
+                    </li>
+                    
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'login' %}">
+                            <i class="fas fa-sign-in-alt"></i> Login
+                        </a>
+                    </li>
+                    
+                    <li class="nav-item">
+                        <div class="welcome-badge">
+                            <i class="fas fa-user"></i>
+                            <span>Welcome, {{user.first_name.title|default:'Guest'}}</span>
+                        </div>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container main-container mt-5 pt-4">
+        <div class="row">
+            <div class="col-12">
+                <!-- Alert Messages -->
+                <div class="alert-container">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {% if message.tags == 'success' %}
+                                    <i class="fas fa-check-circle fa-lg"></i>
+                                {% elif message.tags == 'error' or message.tags == 'danger' %}
+                                    <i class="fas fa-exclamation-circle fa-lg"></i>
+                                {% elif message.tags == 'warning' %}
+                                    <i class="fas fa-exclamation-triangle fa-lg"></i>
+                                {% elif message.tags == 'info' %}
+                                    <i class="fas fa-info-circle fa-lg"></i>
+                                {% endif %}
+                                
+                                <div class="flex-grow-1">
+                                    {{ message }}
+                                </div>
+                                
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                
+                <!-- Page Content -->
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>FraudGuard UPI Protection</span>
+                </div>
+                <p class="footer-text">© 2023 Advanced UPI Fraud Detection System | Protecting Digital Transactions with AI & Machine Learning</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom Scripts -->
+    <script>
+        // Navbar scroll effect
+        window.addEventListener('scroll', function() {
+            const navbar = document.querySelector('.navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+        
+        // Highlight active nav link
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentUrl = window.location.pathname;
+            const navLinks = document.querySelectorAll('.nav-link:not(.dropdown-toggle)');
+            
+            navLinks.forEach(link => {
+                const linkUrl = link.getAttribute('href');
+                if (linkUrl === currentUrl || 
+                   (linkUrl !== '/' && currentUrl.startsWith(linkUrl)) ||
+                   (linkUrl === '/' && currentUrl === '/')) {
+                    link.classList.add('active');
+                }
+            });
+            
+            // For dropdown parents
+            const dropdownToggles = document.querySelectorAll('.dropdown-toggle');
+            dropdownToggles.forEach(toggle => {
+                const dropdownItems = toggle.nextElementSibling.querySelectorAll('.dropdown-item');
+                let isActive = false;
+                
+                dropdownItems.forEach(item => {
+                    const itemUrl = item.getAttribute('href');
+                    if (itemUrl === currentUrl) {
+                        isActive = true;
+                    }
+                });
+                
+                if (isActive) {
+                    toggle.classList.add('active');
+                }
+            });
+            
+            // Initialize tooltips
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
+        
+        // Add subtle animation to alerts
+        document.addEventListener('DOMContentLoaded', function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach((alert, index) => {
+                alert.style.animationDelay = `${index * 0.1}s`;
+                alert.classList.add('animate__animated', 'animate__fadeInRight');
+            });
+        });
+    </script>
+    
+    <!-- Animate.css for animations -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+</body>
+</html>
