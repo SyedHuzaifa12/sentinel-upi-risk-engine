@@ -1,10 +1,19 @@
-"""Tests for the ML inference layer (ml/src/inference/predictor.py).
+"""Regression test for the archived v1 RandomForest path (ml/legacy/).
 
-No database access needed here, so these run against SimpleTestCase.
+Not part of the ongoing test suite -- CI's `pytest ml/tests` / `pytest
+feature_lib/tests` steps don't include this directory, matching "kept for
+reference only" (see ml/legacy/README.md). Run manually if this code is
+ever revisited:
+
+    pytest ml/legacy/test_predictor.py
 """
-from django.test import SimpleTestCase
+import sys
+import unittest
+from pathlib import Path
 
-from ml.src.inference.predictor import FraudPredictor, InvalidInputError, validate_input
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
+from ml.legacy.inference.predictor import FraudPredictor, InvalidInputError, validate_input  # noqa: E402
 
 VALID_INPUT = {
     'AverageAmountTransactionDay': 100.0,
@@ -19,13 +28,13 @@ VALID_INPUT = {
 }
 
 
-class ModelArtifactTests(SimpleTestCase):
+class ModelArtifactTests(unittest.TestCase):
     def test_model_artifact_loads_successfully(self):
         predictor = FraudPredictor()
         self.assertIsNotNone(predictor.pipeline)
 
 
-class DeterministicPredictionTests(SimpleTestCase):
+class DeterministicPredictionTests(unittest.TestCase):
     def test_fixed_input_produces_deterministic_valid_prediction(self):
         predictor = FraudPredictor()
         result_1 = predictor.predict(VALID_INPUT)
@@ -46,7 +55,7 @@ class DeterministicPredictionTests(SimpleTestCase):
             self.assertIn('importance', entry)
 
 
-class InputValidationTests(SimpleTestCase):
+class InputValidationTests(unittest.TestCase):
     def test_missing_fields_are_rejected(self):
         with self.assertRaises(InvalidInputError):
             validate_input({'AverageAmountTransactionDay': 100.0})
@@ -65,3 +74,7 @@ class InputValidationTests(SimpleTestCase):
         predictor = FraudPredictor()
         with self.assertRaises(InvalidInputError):
             predictor.predict({'TransactionAmount': 'garbage'})
+
+
+if __name__ == '__main__':
+    unittest.main()

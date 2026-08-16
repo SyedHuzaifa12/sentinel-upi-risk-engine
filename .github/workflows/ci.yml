@@ -38,3 +38,6 @@ jobs:
 
       - name: Run feature_lib tests
         run: pytest feature_lib/tests
+
+      - name: Run scoring service tests
+        run: pytest service/tests

@@ -1,8 +1,6 @@
 from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from . models import UserPredictModel
-
 
 from .models import Profile
 
@@ -89,13 +87,4 @@ class UpdateProfileForm(forms.ModelForm):
         model = Profile
         fields = ['avatar', 'bio']
 
-
-
-class UserPredictDataForm(forms.ModelForm):
-    class Meta:
-        model = UserPredictModel
-        fields = ['AverageAmountTransactionDay', 'TransactionAmount', 'Is_declined',
-       'TotalNumberOfDeclinesDay', 'isForeignTransaction', 'isHighRiskCountry',
-       'DailyChargebackAvgAmt', 'Six_MonthAvgChbkAmt', 'Six_MonthChbkFreq']
-        
 

@@ -114,6 +114,32 @@
             box-shadow: 0 10px 18px -8px #166b37;
         }
 
+        .action-warn {
+            background: #b8860b;
+            background: linear-gradient(145deg, #b8860b, #d4a017);
+            color: white;
+            box-shadow: 0 10px 18px -8px #a8790a;
+        }
+
+        .action-review {
+            background: #b05a1f;
+            background: linear-gradient(145deg, #b05a1f, #d97747);
+            color: white;
+            box-shadow: 0 10px 18px -8px #a04f1a;
+        }
+
+        .risk-tier-badge {
+            display: inline-block;
+            padding: 0.3rem 1rem;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            letter-spacing: 0.02em;
+            background: #ecf3fa;
+            color: #1e4f7a;
+            margin-left: 10px;
+        }
+
         .interpretation {
             font-size: 1.2rem;
             color: #2f4858;
@@ -446,22 +472,28 @@
         </div>
 
         <div class="prediction-block">
-            <!-- dynamic prediction display -->
-            {% if prediction == "Y" or prediction == "y" or prediction == "Yes" or prediction == "FRAUD" %}
+            <!-- action badge -->
+            {% if action == "BLOCK" %}
                 <div class="pill fraud-yes">
-                    <i class="fas fa-circle-exclamation"></i> FRAUD DETECTED
+                    <i class="fas fa-circle-exclamation"></i> BLOCK
                 </div>
-                <div class="interpretation">
-                    <i class="fas fa-flag"></i> Prediction: <strong>Y (fraudulent)</strong>
+            {% elif action == "REVIEW" %}
+                <div class="pill action-review">
+                    <i class="fas fa-magnifying-glass"></i> REVIEW
+                </div>
+            {% elif action == "WARN" %}
+                <div class="pill action-warn">
+                    <i class="fas fa-triangle-exclamation"></i> WARN
                 </div>
             {% else %}
                 <div class="pill fraud-no">
-                    <i class="fas fa-circle-check"></i> NOT FRAUD
-                </div>
-                <div class="interpretation">
-                    <i class="fas fa-shield"></i> Prediction: <strong>N (legitimate)</strong>
+                    <i class="fas fa-circle-check"></i> ALLOW
                 </div>
             {% endif %}
+            <div class="interpretation">
+                <i class="fas fa-gauge-high"></i> Risk tier: <strong>{{ risk_tier }}</strong>
+                <span class="risk-tier-badge">{{ is_cold|yesno:"cold model,warm model" }}</span>
+            </div>
 
             <div class="action-row">
                 <button onclick="location.href='{% url 'prediction' %}'" class="btn-outline">
@@ -473,127 +505,44 @@
             </div>
         </div>
 
-        {% if fraud_probability is not None %}
+        {% if risk_score is not None %}
         <div class="interpretation" style="margin-top: 1rem;">
-            <i class="fas fa-gauge-high"></i> Model confidence: <strong>{{ fraud_probability|floatformat:1 }}% probability of fraud</strong>
-        </div>
-        {% endif %}
-
-        {% if top_features %}
-        <div class="soft-meta" style="padding-left: 0; margin-top: 0.6rem;">
-            Top contributing factors for this model overall (not specific to this transaction):
-            {% for f in top_features %}{{ f.feature }} ({{ f.importance }}){% if not forloop.last %}, {% endif %}{% endfor %}
+            <i class="fas fa-chart-line"></i> Calibrated risk score: <strong>{{ risk_score|floatformat:4 }}</strong>
+            <span class="soft-meta" style="padding-left: 12px; margin-top:0;">model {{ model_version }} · thresholds {{ thresholds_version }}</span>
         </div>
         {% endif %}
     </div>
 
-    <!-- FRAUDULENT CASE: show detailed guidance sections -->
-    {% if prediction == "Y" or prediction == "y" or prediction == "Yes" or prediction == "FRAUD" %}
-    <div class="fraud-details-grid">
-        <!--
-            Per-transaction "Fraud details" used to be hardcoded here (fixed
-            chargeback/device/location claims shown for every single
-            prediction regardless of the actual input) -- deleted, since
-            they were never true. Real per-transaction reason codes (SHAP
-            contributions from the actual cold/warm model, via
-            ml/src/policy/reason_codes.py) land here once Phase 4 wires the
-            v2 scoring API into a live request path; this legacy view still
-            scores through the old RandomForest model, which the new
-            decision/reason-code layer isn't attached to yet.
-        -->
-
-        <!-- Prevention strategies -->
-        <div class="detail-card">
-            <div class="card-header">
-                <i class="fas fa-shield-halved"></i>
-                <h3>Prevention strategies</h3>
-            </div>
-            <ul class="bullet-list">
-                <li><i class="fas fa-angle-right"></i> <span>Enable <strong>multi‑factor authentication</strong> for all UPI handles.</span></li>
-                <li><i class="fas fa-angle-right"></i> <span>Set daily transaction limits per account to contain exposure.</span></li>
-                <li><i class="fas fa-angle-right"></i> <span>Use device binding — allow UPI only from registered smartphones.</span></li>
-                <li><i class="fas fa-angle-right"></i> <span>Implement behavioural analytics to flag unusual session patterns.</span></li>
-                <li><i class="fas fa-angle-right"></i> <span>Regularly update security patches and UPI app versions.</span></li>
-            </ul>
-        </div>
-
-        <!-- Precautions to avoid fraud -->
-        <div class="detail-card">
-            <div class="card-header">
-                <i class="fas fa-lock"></i>
-                <h3>Precautions to avoid fraud</h3>
-            </div>
-            <ul class="bullet-list">
-                <li><i class="fas fa-angle-right"></i> <span>Never share UPI PIN, OTP, or CVV with anyone, even bank officials.</span></li>
-                <li><i class="fas fa-angle-right"></i> <span>Verify receiver details twice before confirming any payment.</span></li>
-                <li><i class="fas fa-angle-right"></i> <span>Avoid clicking on links in SMS/email claiming “collect money” or “KYC update”.</span></li>
-                <li><i class="fas fa-angle-right"></i> <span>Use only official app stores to download banking apps.</span></li>
-                <li><i class="fas fa-angle-right"></i> <span>Check transaction notifications immediately; report unknown debits.</span></li>
-            </ul>
-        </div>
-
-        <!-- Recommended actions -->
+    <!-- Real per-transaction reason codes: SHAP contributions from the
+         actual cold/warm model (ml/src/policy/reason_codes.py), served live
+         by the Phase 4 FastAPI scoring service. Empty for ALLOW -- the
+         service only computes reason codes for non-ALLOW actions (see
+         service/scoring.py and PROGRESS.md's Phase 4 latency section). -->
+    {% if reason_codes %}
+    <div class="fraud-details-grid" style="grid-template-columns: 1fr;">
         <div class="detail-card">
             <div class="card-header">
                 <i class="fas fa-list-check"></i>
-                <h3>Recommended actions</h3>
+                <h3>Why this transaction was flagged</h3>
             </div>
             <ul class="bullet-list">
-                <li><i class="fas fa-angle-right"></i> <span>Immediately <strong>block the UPI handle</strong> via app or customer care.</span></li>
-                <li><i class="fas fa-angle-right"></i> <span>File a dispute / chargeback through the bank’s fraud reporting channel.</span></li>
-                <li><i class="fas fa-angle-right"></i> <span>Change UPI PIN and associated passwords.</span></li>
-                <li><i class="fas fa-angle-right"></i> <span>Register a complaint on the <strong>National Cyber Crime Portal</strong> (cybercrime.gov.in).</span></li>
-                <li><i class="fas fa-angle-right"></i> <span>Notify the recipient bank to freeze fraudulent amount (within 72 hrs).</span></li>
+                {% for code in reason_codes %}
+                <li><i class="fas fa-angle-right"></i> <span>{{ code.message }}</span></li>
+                {% endfor %}
             </ul>
-        </div>
-
-        <!-- Common causes of UPI fraud (spans two columns) -->
-        <div class="detail-card" style="grid-column: span 2;">
-            <div class="card-header">
-                <i class="fas fa-chart-pie"></i>
-                <h3>Common causes of UPI fraud</h3>
-            </div>
-            <ul class="bullet-list" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem 2rem;">
-                <li><i class="fas fa-angle-right"></i> <span><strong>Social engineering:</strong> Fraudsters posing as bank reps.</span></li>
-                <li><i class="fas fa-angle-right"></i> <span><strong>Fake QR codes:</strong> Replacing legitimate merchant codes.</span></li>
-                <li><i class="fas fa-angle-right"></i> <span><strong>Malware / screen readers:</strong> Stealing credentials via accessibility.</span></li>
-                <li><i class="fas fa-angle-right"></i> <span><strong>SIM swap attacks:</strong> Cloning mobile number to intercept OTP.</span></li>
-                <li><i class="fas fa-angle-right"></i> <span><strong>Vishing / phishing:</strong> Tricking users into revealing PIN.</span></li>
-                <li><i class="fas fa-angle-right"></i> <span><strong>Public WiFi interception:</strong> Unencrypted UPI sessions.</span></li>
-                <li><i class="fas fa-angle-right"></i> <span><strong>Fake customer care numbers</strong> listed online.</span></li>
-                <li><i class="fas fa-angle-right"></i> <span><strong>Autofill / saved OTPs</strong> in messaging apps.</span></li>
-                <li><i class="fas fa-angle-right"></i> <span><strong>UPI auto‑pay mandate abuse</strong> (e‑mandate fraud).</span></li>
-                <li><i class="fas fa-angle-right"></i> <span><strong>Lack of transaction alerts</strong> / delayed notifications.</span></li>
-            </ul>
-            <div class="soft-meta">top contributing factors according to NPCI reports</div>
         </div>
     </div>
-
-    <!-- NO FRAUD: show safe state + same comprehensive fraud education (for awareness) -->
-    {% else %}
+    {% elif action == "ALLOW" %}
     <div class="safe-panel">
         <div class="safe-icon">
             <i class="fas fa-shield-check"></i>
         </div>
-        <div class="safe-message">Transaction appears legitimate</div>
+        <div class="safe-message">Transaction allowed</div>
         <div class="safe-note">
             <i class="fas fa-circle-info" style="margin-right: 6px;"></i>
-            No fraudulent indicators triggered. However, always follow basic safety practices.
+            No risk indicators crossed the alert threshold for this transaction.
         </div>
-        <!-- quick mini grid with 2 soft prevention cards (smaller) -->
-        <div style="display: flex; gap: 1.2rem; margin-top: 2rem; flex-wrap: wrap; justify-content: center;">
-            <div style="background: #e6f2ea; padding: 1.2rem 1.8rem; border-radius: 40px; font-size:0.95rem;">
-                <i class="fas fa-phone-alt" style="color:#1e6d3d;"></i> Report lost card immediately
-            </div>
-            <div style="background: #e6f2ea; padding: 1.2rem 1.8rem; border-radius: 40px; font-size:0.95rem;">
-                <i class="fas fa-qrcode" style="color:#1e6d3d;"></i> Scan only trusted QR codes
-            </div>
-        </div>
-        <p style="margin-top: 1.8rem; font-size:0.9rem; color:#4f7f64;">
-            <i class="fas fa-lock-open"></i> stay vigilant — UPI safety is continuous
-        </p>
     </div>
-
     {% endif %}
 
     <!-- ========= COMPREHENSIVE FRAUD EDUCATION SECTION ========= -->

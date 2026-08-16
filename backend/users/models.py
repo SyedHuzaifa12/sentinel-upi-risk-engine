@@ -32,29 +32,44 @@ class UserPredictModel(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='predictions')
     created_at = models.DateTimeField(auto_now_add=True, null=True)
 
-    AverageAmountTransactionDay = models.FloatField()  # Assuming it's a decimal value
-    TransactionAmount = models.FloatField()  # Assuming it's a decimal value
-    Is_declined = models.CharField(max_length=100)  # Assuming this is a True/False field
-    TotalNumberOfDeclinesDay = models.IntegerField()
-    isForeignTransaction = models.CharField(max_length=100) # Assuming this is a True/False field
-    isHighRiskCountry = models.CharField(max_length=100)  # Assuming this is a True/False field
-    DailyChargebackAvgAmt = models.FloatField()  # Assuming it's a decimal value
-    Six_MonthAvgChbkAmt = models.FloatField()  # Assuming it's a decimal value
-    Six_MonthChbkFreq = models.IntegerField()  # Assuming it's an integer
-    isFradulent = models.CharField(max_length=100) # Assuming this is a True/False field
+    # --- Legacy (pre-Phase-4) fields: the 9-field RandomForest form's input +
+    # output. Now nullable -- new rows created via the Phase 4 sandbox never
+    # populate these, but old rows and their values are kept as-is, not
+    # backfilled or deleted (see ml/legacy/README.md for the archived model
+    # these used to feed).
+    AverageAmountTransactionDay = models.FloatField(null=True, blank=True)
+    TransactionAmount = models.FloatField(null=True, blank=True)
+    Is_declined = models.CharField(max_length=100, null=True, blank=True)
+    TotalNumberOfDeclinesDay = models.IntegerField(null=True, blank=True)
+    isForeignTransaction = models.CharField(max_length=100, null=True, blank=True)
+    isHighRiskCountry = models.CharField(max_length=100, null=True, blank=True)
+    DailyChargebackAvgAmt = models.FloatField(null=True, blank=True)
+    Six_MonthAvgChbkAmt = models.FloatField(null=True, blank=True)
+    Six_MonthChbkFreq = models.IntegerField(null=True, blank=True)
+    isFradulent = models.CharField(max_length=100, null=True, blank=True)
     fraud_probability = models.FloatField(null=True, blank=True)
+
+    # --- Phase 4: raw event + v2 scoring service result. Nullable -- legacy
+    # rows never populate these.
+    payer_vpa = models.CharField(max_length=255, null=True, blank=True)
+    payee_vpa = models.CharField(max_length=255, null=True, blank=True)
+    amount = models.FloatField(null=True, blank=True)
+    event_timestamp = models.DateTimeField(null=True, blank=True)
+    action = models.CharField(max_length=20, null=True, blank=True)  # ALLOW | WARN | REVIEW | BLOCK
+    risk_tier = models.CharField(max_length=20, null=True, blank=True)  # LOW | MEDIUM | HIGH | CRITICAL
+    risk_score = models.FloatField(null=True, blank=True)
+    model_version = models.CharField(max_length=100, null=True, blank=True)
+    reason_codes = models.JSONField(null=True, blank=True)
 
     class Meta:
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"Prediction: {self.isFradulent}"
+        return f"Prediction: {self.isFradulent or self.action}"
 
     @property
     def Prediction(self):
         """Template-compatibility alias — app/model_db.html was written
         against the old in-memory dict's 'Prediction' key."""
         return self.isFradulent
-    
-
 

@@ -13,7 +13,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
-from ..features.schema import CATEGORICAL_FEATURES, NUMERIC_FEATURES
+from ml.legacy.schema import CATEGORICAL_FEATURES, NUMERIC_FEATURES
 
 RANDOM_STATE = 42
 N_ESTIMATORS = 200

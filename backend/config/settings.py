@@ -40,6 +40,11 @@ if str(REPO_ROOT) not in sys.path:
 # the default too, not just a fully-unset variable.
 MODEL_ARTIFACT_DIR = Path(os.getenv('MODEL_ARTIFACT_DIR') or str(REPO_ROOT / 'ml' / 'artifacts' / 'models'))
 
+# Phase 4: the FastAPI scoring service Django now calls over HTTP instead of
+# loading a model in-process. `uvicorn service.main:app --port 8001` from the
+# repo root serves this locally by default.
+RISK_API_URL = os.getenv('RISK_API_URL') or 'http://localhost:8001'
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/

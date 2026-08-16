@@ -18,9 +18,11 @@ ARTIFACTS_DIR = ML_ROOT / 'artifacts'
 MODELS_DIR = ARTIFACTS_DIR / 'models'
 METRICS_DIR = ARTIFACTS_DIR / 'metrics'
 
-# Legacy RandomForest artifact (ml/src/train.py's old target, still served by
-# backend/ via ml/src/inference/predictor.py). Phase 2 does not touch these.
-MODEL_PATH = MODELS_DIR / 'upi_fraud_model.pkl'
+# Legacy (pre-migration v1) RandomForest artifact. Archived to ml/legacy/ in
+# Phase 4 -- see ml/legacy/README.md. Nothing in service/ or the current
+# backend/ imports this; kept for reference only.
+LEGACY_DIR = ML_ROOT / 'legacy'
+MODEL_PATH = LEGACY_DIR / 'models' / 'upi_fraud_model.pkl'
 METRICS_PATH = METRICS_DIR / 'metrics.json'
 
 # Phase 2 (ml/src/train.py): cold/warm LightGBM artifacts.

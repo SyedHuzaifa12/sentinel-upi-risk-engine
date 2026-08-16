@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UPI risk analysis · professional form</title>
+    <title>UPI risk analysis · single event sandbox</title>
     <!-- Poppins font for clean, modern look -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -37,7 +37,7 @@
             backdrop-filter: blur(4px);
             background: #ffffff;
             border-radius: 32px;
-            box-shadow: 
+            box-shadow:
                 0 20px 35px -8px rgba(0,20,45,0.15),
                 0 4px 8px 0 rgba(0,0,0,0.02),
                 inset 0 1px 1px rgba(255,255,255,0.7);
@@ -93,6 +93,13 @@
             font-size: 0.9rem;
         }
 
+        .sandbox-note {
+            margin: 0.9rem 0 0 0;
+            font-size: 0.82rem;
+            color: #5b748e;
+            font-style: italic;
+        }
+
         /* form grid */
         .form-grid {
             padding: 1rem 2.5rem 2rem 2.5rem;
@@ -135,6 +142,18 @@
             font-weight: 600;
         }
 
+        .input-label .prefilled-tag {
+            color: #2a7250;
+            font-weight: 500;
+            text-transform: none;
+            letter-spacing: normal;
+            font-size: 0.72rem;
+            background: #e7f4ec;
+            padding: 0.1rem 0.6rem;
+            border-radius: 20px;
+            margin-left: auto;
+        }
+
         /* field styling */
         .field-wrapper {
             position: relative;
@@ -165,7 +184,7 @@
             box-shadow: 0 2px 4px rgba(0,20,40,0.02);
         }
 
-        input:focus {
+        input:focus, select:focus {
             outline: none;
             border-color: #2979b9;
             background-color: #fafdff;
@@ -182,30 +201,20 @@
             margin: 0;
         }
 
+        select {
+            padding-left: 2.8rem;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%237d95af'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+        }
+
         /* hint / suffix styling */
         .input-hint {
             font-size: 0.7rem;
             color: #5b748e;
             margin-top: 2px;
             margin-left: 12px;
-        }
-
-        /* yes/no toggle adapt as text input, but we give visual assist */
-        .yes-no-hint {
-            display: flex;
-            gap: 12px;
-            margin-top: 5px;
-            font-size: 0.75rem;
-            color: #38658b;
-        }
-
-        .yes-no-hint i {
-            background: #eef3f9;
-            padding: 3px 10px;
-            border-radius: 40px;
-            font-style: normal;
-            font-weight: 500;
-            color: #1d4e7c;
         }
 
         /* action button */
@@ -253,35 +262,9 @@
             box-shadow: 0 10px 16px -6px #0c2f4b;
         }
 
-        /* micro tooltip / formatting */
-        .text-soft {
-            color: #647b96;
-            font-size: 0.75rem;
-            display: block;
-            margin-top: 5px;
-        }
-
         /* csrf token is hidden but preserved */
         input[name="csrfmiddlewaretoken"] {
             display: none;
-        }
-
-        /* make the yes/no fields a bit more distinctive */
-        input[name="Is_declined"],
-        input[name="isForeignTransaction"],
-        input[name="isHighRiskCountry"] {
-            text-transform: uppercase;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-        }
-
-        input[name="Is_declined"]::placeholder,
-        input[name="isForeignTransaction"]::placeholder,
-        input[name="isHighRiskCountry"]::placeholder {
-            text-transform: none;
-            font-weight: 400;
-            color: #a8bccf;
-            letter-spacing: normal;
         }
 
         /* small badge style for required */
@@ -317,24 +300,23 @@
                 justify-content: center;
             }
         }
-
-        /* subtle divider for sections if needed */
-        .field-divider {
-            margin: 0.5rem 0;
-        }
     </style>
 </head>
 <body>
 <div class="card">
     <div class="card-header">
         <h2>
-            <i class="fas fa-shield-alt"></i> 
-            UPI transaction forensics
+            <i class="fas fa-shield-alt"></i>
+            Single event sandbox
         </h2>
         <div class="subhead">
             <i class="fas fa-microchip"></i>
-            Risk prediction · enter accurate transaction details
+            Score one UPI event through the live risk engine
         </div>
+        <p class="sandbox-note">
+            <i class="fas fa-circle-info"></i>
+            In production these fields arrive from the payment app; they are editable here for demonstration.
+        </p>
     </div>
 
     {% if messages %}
@@ -347,160 +329,165 @@
     </div>
     {% endif %}
 
-    <form method="post" action="{% url 'analyze_upi' %}">
-        <!-- CSRF token remains hidden but functional -->
+    <form method="post" action="{% url 'analyze_upi' %}" id="sandbox-form">
         {% csrf_token %}
 
         <div class="form-grid">
-            <!-- row 1 -->
             <div class="input-group">
                 <div class="input-label">
-                    <i class="fas fa-chart-line"></i> Avg amount (daily) <span>*</span>
+                    <i class="fas fa-user"></i> Payer VPA <span>*</span>
+                </div>
+                <div class="field-wrapper">
+                    <i class="fas fa-at field-icon"></i>
+                    <input type="text" id="payer_vpa" name="payer_vpa" placeholder="alice@okaxis" required>
+                </div>
+                <div class="input-hint">the paying handle, e.g. name@bankhandle</div>
+            </div>
+
+            <div class="input-group">
+                <div class="input-label">
+                    <i class="fas fa-store"></i> Payee VPA <span>*</span>
+                </div>
+                <div class="field-wrapper">
+                    <i class="fas fa-at field-icon"></i>
+                    <input type="text" id="payee_vpa" name="payee_vpa" placeholder="merchant@ybl" required>
+                </div>
+                <div class="input-hint">the receiving handle</div>
+            </div>
+
+            <div class="input-group">
+                <div class="input-label">
+                    <i class="fas fa-coins"></i> Amount <span>*</span>
                 </div>
                 <div class="field-wrapper">
                     <i class="fas fa-rupee-sign field-icon"></i>
-                    <input type="number" step="0.01" name="AverageAmountTransactionDay" placeholder="0.00" required>
+                    <input type="number" step="0.01" min="0.01" name="amount" placeholder="0.00" required>
                 </div>
-                <div class="input-hint">average transaction amount per day</div>
+                <div class="input-hint">transaction value in INR</div>
             </div>
 
             <div class="input-group">
                 <div class="input-label">
-                    <i class="fas fa-coins"></i> Transaction amount <span>*</span>
+                    <i class="fas fa-right-left"></i> Transaction type <span>*</span>
                 </div>
                 <div class="field-wrapper">
-                    <i class="fas fa-rupee-sign field-icon"></i>
-                    <input type="number" step="0.01" name="TransactionAmount" placeholder="0.00" required>
+                    <i class="fas fa-arrows-left-right field-icon"></i>
+                    <select name="txn_type" required>
+                        <option value="P2P">P2P — person to person</option>
+                        <option value="P2M">P2M — person to merchant</option>
+                    </select>
                 </div>
-                <div class="input-hint">current transaction value</div>
             </div>
 
-            <!-- row 2: is_declined + total declines -->
-            <div class="input-group">
+            <div class="input-group full-width">
                 <div class="input-label">
-                    <i class="fas fa-ban"></i> Was declined? <span>*</span>
+                    <i class="fas fa-qrcode"></i> Initiation mode <span>*</span>
                 </div>
                 <div class="field-wrapper">
-                    <i class="fas fa-question-circle field-icon"></i>
-                    <input type="text" name="Is_declined" placeholder="Y / N" required 
-                           pattern="[YyNn]" title="Enter Y or N (case-insensitive)">
+                    <i class="fas fa-bolt field-icon"></i>
+                    <select name="initiation_mode" required>
+                        <option value="INTENT">INTENT — app-to-app pay link</option>
+                        <option value="SCAN_QR">SCAN_QR — QR code scan</option>
+                        <option value="COLLECT_REQUEST">COLLECT_REQUEST — payee requests money</option>
+                        <option value="CONTACT">CONTACT — pay a saved contact</option>
+                    </select>
                 </div>
-                <div class="yes-no-hint"><i>Y</i> <i>N</i> (case insensitive)</div>
             </div>
 
+            <!-- Pre-filled fields: a real payment app supplies these automatically.
+                 Shown and editable for transparency/demo purposes, not blank
+                 required inputs the user has to invent values for. -->
             <div class="input-group">
                 <div class="input-label">
-                    <i class="fas fa-calendar-times"></i> Declines today <span>*</span>
+                    <i class="fas fa-building-columns"></i> Payer bank <span class="prefilled-tag">auto-detected</span>
                 </div>
                 <div class="field-wrapper">
-                    <i class="fas fa-hashtag field-icon"></i>
-                    <input type="number" name="TotalNumberOfDeclinesDay" placeholder="e.g. 0, 1, 2..." required>
+                    <i class="fas fa-university field-icon"></i>
+                    <input type="text" id="payer_bank" name="payer_bank" value="OTHER">
                 </div>
-                <div class="input-hint">total declines this day</div>
-            </div>
-
-            <!-- row 3: foreign + highrisk -->
-            <div class="input-group">
-                <div class="input-label">
-                    <i class="fas fa-globe"></i> Foreign tx? <span>*</span>
-                </div>
-                <div class="field-wrapper">
-                    <i class="fas fa-flag field-icon"></i>
-                    <input type="text" name="isForeignTransaction" placeholder="Y / N" required
-                           pattern="[YyNn]" title="Y or N only">
-                </div>
-                <div class="yes-no-hint"><i>Y</i> (foreign)  <i>N</i> (domestic)</div>
+                <div class="input-hint">derived from the payer VPA suffix — editable</div>
             </div>
 
             <div class="input-group">
                 <div class="input-label">
-                    <i class="fas fa-exclamation-triangle"></i> High‑risk country <span>*</span>
+                    <i class="fas fa-building-columns"></i> Payee bank <span class="prefilled-tag">auto-detected</span>
                 </div>
                 <div class="field-wrapper">
-                    <i class="fas fa-skull-crosswalk field-icon"></i>
-                    <input type="text" name="isHighRiskCountry" placeholder="Y / N" required
-                           pattern="[YyNn]" title="Y or N only">
+                    <i class="fas fa-university field-icon"></i>
+                    <input type="text" id="payee_bank" name="payee_bank" value="OTHER">
                 </div>
-                <div class="yes-no-hint"><i>Y</i> (risky)  <i>N</i> (standard)</div>
-            </div>
-
-            <!-- row 4: chargeback averages -->
-            <div class="input-group">
-                <div class="input-label">
-                    <i class="fas fa-rotate-left"></i> Daily chargeback avg <span>*</span>
-                </div>
-                <div class="field-wrapper">
-                    <i class="fas fa-rupee-sign field-icon"></i>
-                    <input type="number" step="0.01" name="DailyChargebackAvgAmt" placeholder="0.00" required>
-                </div>
-                <div class="input-hint">average daily chargeback amount</div>
+                <div class="input-hint">derived from the payee VPA suffix — editable</div>
             </div>
 
             <div class="input-group">
                 <div class="input-label">
-                    <i class="fas fa-calendar"></i> 6‑month avg chbk <span>*</span>
+                    <i class="fas fa-calendar-day"></i> Payer account age (days) <span class="prefilled-tag">default</span>
                 </div>
                 <div class="field-wrapper">
-                    <i class="fas fa-rupee-sign field-icon"></i>
-                    <input type="number" step="0.01" name="Six_MonthAvgChbkAmt" placeholder="0.00" required>
+                    <i class="fas fa-hourglass-half field-icon"></i>
+                    <input type="number" min="0" name="payer_account_age_days" value="365">
                 </div>
-                <div class="input-hint">six month avg chargeback amount</div>
+                <div class="input-hint">how long the payer's account has existed</div>
             </div>
 
-            <!-- row 5: six month chbk freq (full width optional but keep as two?) we put as single but span later? frequency can be alone but let's make it half and keep rhythm -->
             <div class="input-group">
                 <div class="input-label">
-                    <i class="fas fa-chart-bar"></i> 6‑month chbk freq <span>*</span>
+                    <i class="fas fa-mobile-screen"></i> Device id <span class="prefilled-tag">this session</span>
                 </div>
                 <div class="field-wrapper">
-                    <i class="fas fa-wave-square field-icon"></i>
-                    <input type="number" name="Six_MonthChbkFreq" placeholder="e.g. 0, 1, 5" required>
+                    <i class="fas fa-fingerprint field-icon"></i>
+                    <input type="text" name="device_id" value="{{ device_id }}">
                 </div>
-                <div class="input-hint">number of chargebacks in last 6 months</div>
+                <div class="input-hint">stable for this browser session — editable to simulate a new device</div>
             </div>
 
-            <!-- empty placeholder for alignment (so freq left, right filler to keep 2col balance) -->
-            <div class="input-group">
-                <!-- transparent decorative hint: not needed but fill space -->
-                <div class="input-label" style="opacity:0.4"><i class="fas fa-lock"></i> secure field</div>
-                <div style="height:1px;"></div>
-            </div>
-
-            <!-- action row full width -->
             <div class="form-actions">
                 <button type="submit" class="btn-primary">
-                    <i class="fas fa-calculator"></i> Analyze transaction
+                    <i class="fas fa-calculator"></i> Score transaction
                     <i class="fas fa-arrow-right" style="font-size: 1rem;"></i>
                 </button>
             </div>
 
-            <!-- subtle footnote: required fields note -->
             <div class="full-width" style="grid-column: span 2; margin-top: 0px; font-size:0.8rem; color:#4e6e8c; text-align: right; padding-right: 10px;">
-                <i class="fas fa-asterisk" style="color:#b22222; font-size: 0.5rem;"></i> all fields required
+                <i class="fas fa-asterisk" style="color:#b22222; font-size: 0.5rem;"></i> required
             </div>
         </div>
     </form>
-    <!-- extra professional sheen -->
     <div style="height: 6px; background: linear-gradient(90deg, #cddbe8, #b0c8dd, #cddbe8); width: 100%; opacity: 0.4;"></div>
 </div>
 
-<!-- optional javascript to hint Y/N fields but not necessary, just placeholder behavior -->
 <script>
     (function() {
-        // simple UX: convert to uppercase while typing (but keep it gentle)
-        const yesNoFields = document.querySelectorAll('input[name="Is_declined"], input[name="isForeignTransaction"], input[name="isHighRiskCountry"]');
-        yesNoFields.forEach(field => {
-            field.addEventListener('input', function(e) {
-                this.value = this.value.toUpperCase().replace(/[^YN]/g, '').slice(0,1);
+        // Derives payer/payee bank from the VPA handle suffix -- a small
+        // convenience so the sandbox doesn't ask the user to know or invent
+        // a bank code. Always overridable by typing directly into the field.
+        const BANK_SUFFIXES = {
+            'okaxis': 'AXIS', 'okhdfcbank': 'HDFC', 'oksbi': 'SBI', 'okicici': 'ICICI',
+            'ybl': 'YES', 'ibl': 'IDBI', 'axl': 'AXIS', 'paytm': 'PAYTM',
+        };
+
+        function deriveBank(vpa) {
+            const at = vpa.lastIndexOf('@');
+            if (at === -1) return null;
+            const suffix = vpa.slice(at + 1).toLowerCase();
+            return BANK_SUFFIXES[suffix] || 'OTHER';
+        }
+
+        function wireAutoDetect(vpaFieldId, bankFieldId) {
+            const vpaField = document.getElementById(vpaFieldId);
+            const bankField = document.getElementById(bankFieldId);
+            let bankEditedManually = false;
+
+            bankField.addEventListener('input', function() { bankEditedManually = true; });
+            vpaField.addEventListener('blur', function() {
+                if (bankEditedManually) return;
+                const derived = deriveBank(vpaField.value.trim());
+                if (derived) bankField.value = derived;
             });
-            field.addEventListener('blur', function() {
-                if (this.value && !/^[YN]$/i.test(this.value)) {
-                    this.style.borderColor = '#d97747';
-                } else {
-                    this.style.borderColor = '#dde7f0';
-                }
-            });
-        });
+        }
+
+        wireAutoDetect('payer_vpa', 'payer_bank');
+        wireAutoDetect('payee_vpa', 'payee_bank');
     })();
 </script>
 </body>

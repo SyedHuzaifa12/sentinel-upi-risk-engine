@@ -1,17 +1,18 @@
-"""Inference-only wrapper around the trained fraud-detection pipeline.
+"""Inference-only wrapper around the pre-migration (v1) RandomForest
+fraud-detection pipeline.
 
-This module never retrains the model — it loads the artifact produced by
-``ml/src/train.py`` and exposes a single ``predict()`` call used by both the
-Django backend (backend/users/services/prediction_service.py) and the
-evaluation pipeline.
+ARCHIVED (Phase 4): this is the pre-migration path, kept for reference only
+-- see ml/legacy/README.md. Nothing in service/ or the current backend/
+imports this; Django now calls the FastAPI scoring service
+(backend/users/services/prediction_service.py) instead.
 """
 from dataclasses import dataclass, field
 
 import joblib
 import pandas as pd
 
-from ..features.schema import CATEGORICAL_FEATURES, FEATURE_COLUMNS, NUMERIC_FEATURES, YES_NO_VALUES
-from ..utils.paths import MODEL_PATH
+from ml.legacy.schema import CATEGORICAL_FEATURES, FEATURE_COLUMNS, NUMERIC_FEATURES, YES_NO_VALUES
+from ml.src.utils.paths import MODEL_PATH
 
 
 class InvalidInputError(ValueError):

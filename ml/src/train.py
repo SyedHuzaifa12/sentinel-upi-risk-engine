@@ -11,10 +11,10 @@ Produces:
     ml/artifacts/metrics/metrics_v2.json
     ml/artifacts/metrics/reliability_cold.json, reliability_warm.json
 
-Does NOT touch ml/artifacts/models/upi_fraud_model.pkl or
-ml/artifacts/metrics/metrics.json (the legacy RandomForest artifacts
-backend/ still serves) -- those come from the untouched legacy modules
-(ml/src/data/load.py, ml/src/training/pipeline.py, ml/src/features/schema.py).
+Does NOT touch ml/legacy/models/upi_fraud_model.pkl or
+ml/artifacts/metrics/metrics.json (the pre-migration v1 RandomForest
+artifacts, archived to ml/legacy/ in Phase 4 -- backend/ no longer serves
+them; see ml/legacy/README.md).
 """
 import json
 import subprocess
@@ -32,6 +32,7 @@ from sklearn.metrics import roc_auc_score
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from feature_lib.compute import compute_features_batch  # noqa: E402
+from feature_lib.frame import vector_to_frame  # noqa: E402
 from feature_lib.registry import ALL_FEATURES, COLD_FEATURES, REGISTRY  # noqa: E402
 from feature_lib.store.in_memory import InMemoryHistoryStore  # noqa: E402
 from ml.src.data.load_synthetic import load_synthetic_events  # noqa: E402
@@ -85,24 +86,22 @@ def build_feature_dataframe(events):
     event stream (train+val+test together) -- this is what keeps val
     'warmed' by train and test 'warmed' by train+val without ever manually
     carrying store state across split boundaries, which is exactly where
-    most people accidentally leak."""
+    most people accidentally leak.
+
+    Feature columns (including the amount_roundness categorical cast) come
+    from feature_lib.frame.vector_to_frame -- the same function
+    service/scoring.py calls at serving time, so training and serving can
+    never silently diverge on column order or dtype handling."""
     store = InMemoryHistoryStore()
     vectors = compute_features_batch(events, store)
 
-    rows = []
-    for event, vector in zip(events, vectors):
-        row = dict(vector.values)
-        row['txn_id'] = event.txn_id
-        row['timestamp'] = event.timestamp
-        row['amount'] = event.amount
-        row['label_is_fraud'] = int(event.label_is_fraud)
-        row['label_typology'] = event.label_typology
-        row['is_cold'] = vector.is_cold
-        rows.append(row)
-
-    df = pd.DataFrame(rows)
-    df['timestamp'] = pd.to_datetime(df['timestamp'], utc=True)
-    df['amount_roundness'] = df['amount_roundness'].astype('category')
+    df = vector_to_frame([vector.values for vector in vectors], ALL_FEATURES)
+    df['txn_id'] = [event.txn_id for event in events]
+    df['timestamp'] = pd.to_datetime([event.timestamp for event in events], utc=True)
+    df['amount'] = [event.amount for event in events]
+    df['label_is_fraud'] = [int(event.label_is_fraud) for event in events]
+    df['label_typology'] = [event.label_typology for event in events]
+    df['is_cold'] = [vector.is_cold for vector in vectors]
     return df
 
 

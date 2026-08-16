@@ -6,8 +6,8 @@ that logic now lives.
 """
 import pandas as pd
 
-from ..features.schema import DROP_COLUMNS, FEATURE_COLUMNS, TARGET_COLUMN
-from ..utils.paths import RAW_DATASET_PATH
+from ml.legacy.schema import DROP_COLUMNS, FEATURE_COLUMNS, TARGET_COLUMN
+from ml.src.utils.paths import RAW_DATASET_PATH
 
 
 def load_dataset(csv_path=RAW_DATASET_PATH):
