@@ -102,29 +102,50 @@ def test_no_single_feature_column_leaks(medium_dataset):
 
 
 def test_mule_payees_have_higher_hourly_fanin_than_legit(medium_dataset):
+    """Mule fan-in is now spread over 6-24h (not 1-6h) with 8-40 senders
+    (not 30-200) -- deliberately less extreme, so mule velocity isn't
+    orders of magnitude above any legitimate merchant's (see PROGRESS.md
+    "Bugs found and fixed"). A same-calendar-hour bucket count is too
+    narrow a window to reliably catch a fan-in spread this way, so this
+    uses a rolling 24h window (max distinct payers in any trailing 24h)
+    instead -- still a real, meaningfully higher, but no longer
+    unrealistically extreme, signal."""
     events, _ = medium_dataset
 
     mule_payees = {e.payee_vpa for e in events if e.label_typology == "MULE_FANIN"}
     if not mule_payees:
         pytest.skip("no MULE_FANIN operation was injected at this scale/seed")
 
-    def max_hourly_unique_payer_count(payee_vpa):
-        buckets = {}
-        for e in events:
-            if e.payee_vpa != payee_vpa:
-                continue
-            bucket = e.timestamp.replace(minute=0, second=0, microsecond=0)
-            buckets.setdefault(bucket, set()).add(e.payer_vpa)
-        return max(len(payer_set) for payer_set in buckets.values())
+    from bisect import bisect_left
+    from datetime import timedelta
 
-    mule_max_fanins = [max_hourly_unique_payer_count(vpa) for vpa in mule_payees]
+    def max_rolling_24h_unique_payer_count(payee_vpa):
+        payee_events = sorted(
+            ((e.timestamp, e.payer_vpa) for e in events if e.payee_vpa == payee_vpa),
+            key=lambda pair: pair[0],
+        )
+        timestamps = [t for t, _ in payee_events]
+        best = 0
+        for i, (ts, _) in enumerate(payee_events):
+            lo = bisect_left(timestamps, ts - timedelta(hours=24))
+            distinct = len({payer for _, payer in payee_events[lo:i + 1]})
+            best = max(best, distinct)
+        return best
+
+    mule_max_fanins = [max_rolling_24h_unique_payer_count(vpa) for vpa in mule_payees]
 
     legit_payees = {e.payee_vpa for e in events if e.label_typology == "legit"}
-    legit_max_fanins = [max_hourly_unique_payer_count(vpa) for vpa in legit_payees]
+    legit_max_fanins = [max_rolling_24h_unique_payer_count(vpa) for vpa in legit_payees]
 
+    # Median, not min: with fan-in deliberately tamed to 8-40 senders (not
+    # 30-200), the occasional weak mule instance overlapping a busy
+    # merchant's upper tail is now expected and realistic -- mule detection
+    # via fan-in alone should no longer be a guaranteed catch every time.
+    # The typical mule instance should still stand out clearly, though.
     p95_legit = np.percentile(legit_max_fanins, 95)
-    assert min(mule_max_fanins) > p95_legit, (
-        f"weakest mule fan-in ({min(mule_max_fanins)}) does not clearly exceed "
+    median_mule = float(np.median(mule_max_fanins))
+    assert median_mule > p95_legit, (
+        f"median mule fan-in ({median_mule}) does not clearly exceed "
         f"the 95th percentile of legit payee fan-in ({p95_legit})"
     )
 

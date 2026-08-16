@@ -24,10 +24,26 @@ from .typologies import inject_ato_burst, inject_mule_fanin, inject_qr_swap, inj
 # capped; SCAM_COLLECT is single-event-per-instance so it's used last, as the
 # fine adjustment that lands the final rate inside the configured band.
 _TYPOLOGY_WEIGHTS = {"mule": 0.35, "ato": 0.20, "qr": 0.20, "scam": 0.25}
-_MULE_MIN_SENDERS = 30
-_MULE_AVG_SENDERS = 115
+# Reduced from 30-200 (2026-08-16): a 30-200-sender fan-in in 1-6 hours put
+# mule velocity orders of magnitude above any legitimate merchant, making
+# payee_fanin_velocity a perfect (AUC 1.0) separator -- unrealistically easy.
+# See PROGRESS.md "Bugs found and fixed".
+_MULE_MIN_SENDERS = 8
+_MULE_MAX_SENDERS = 40
+_MULE_AVG_SENDERS = 24
 _ATO_AVG_EVENTS = 5.5
 _QR_AVG_EVENTS = 5.0
+
+# Legit events that deliberately mimic fraud-shaped behavior (2026-08-16 fix,
+# see PROGRESS.md "Bugs found and fixed"): without these, amount/collect-
+# request/new-payee patterns only ever appeared in fraud, which is not
+# realistic -- genuine one-off big purchases, friend-to-friend collect
+# requests for real shared expenses, and occasional late-night activity all
+# happen in real UPI traffic too.
+LEGIT_BIG_ONEOFF_RATE = 0.03      # of new-payee txns, fraction that are a genuine large one-off purchase
+LEGIT_BIG_ONEOFF_MULTIPLIER = (3.0, 15.0)
+LEGIT_BIG_COLLECT_RATE = 0.15     # of COLLECT_REQUEST txns, fraction that are a real shared-expense request
+LEGIT_BIG_COLLECT_MULTIPLIER = (2.0, 6.0)
 
 
 def _simulate_legit(rng, payers, payees, sim_start, days):
@@ -47,9 +63,11 @@ def _simulate_legit(rng, payers, payees, sim_start, days):
         for payer in payers:
             n_txns = int(rng.poisson(payer.daily_txn_rate))
             for _ in range(n_txns):
+                is_new_payee_txn = None  # computed below, once we know the payee
                 payee = _choose_payee(rng, payer, available, payee_lookup)
                 if payee is None:
                     continue
+                is_new_payee_txn = payee.payee_id not in payer.known_payee_ids
 
                 if rng.random() < 0.9:
                     hour = int(rng.integers(payer.active_hour_start,
@@ -60,6 +78,9 @@ def _simulate_legit(rng, payers, payees, sim_start, days):
                 ts = sim_start + timedelta(days=day, hours=hour, minutes=minute)
 
                 amount = float(rng.lognormal(mean=payer.amount_mu, sigma=payer.amount_sigma))
+                if is_new_payee_txn and rng.random() < LEGIT_BIG_ONEOFF_RATE:
+                    # A genuine large one-off purchase to a new merchant/payee.
+                    amount *= float(rng.uniform(*LEGIT_BIG_ONEOFF_MULTIPLIER))
 
                 if payee.kind == "merchant":
                     txn_type = "P2M"
@@ -68,6 +89,9 @@ def _simulate_legit(rng, payers, payees, sim_start, days):
                     txn_type = "P2P"
                     if rng.random() < payer.collect_request_rate:
                         initiation_mode = "COLLECT_REQUEST"
+                        if rng.random() < LEGIT_BIG_COLLECT_RATE:
+                            # A real shared-expense request between friends (rent split, group gift).
+                            amount *= float(rng.uniform(*LEGIT_BIG_COLLECT_MULTIPLIER))
                     else:
                         initiation_mode = ["INTENT", "CONTACT"][int(rng.integers(0, 2))]
 
@@ -131,10 +155,10 @@ def _plan_and_inject_fraud(rng, payers, payees, sim_start, days, used_vpas,
         n_mule_ops = max(1, round(mule_budget / _MULE_AVG_SENDERS))
         # Cap the per-operation sender range to the available budget so a
         # single operation can't blow past the target fraud rate on its own
-        # at small test scales; at full scale this cap sits above 200 anyway
-        # and the real 30-200 spec range applies unmodified.
+        # at small test scales; at full scale this cap sits at/above
+        # _MULE_MAX_SENDERS anyway and the real 8-40 range applies unmodified.
         per_op_budget = mule_budget / n_mule_ops
-        max_senders = int(min(200, max(_MULE_MIN_SENDERS, round(per_op_budget))))
+        max_senders = int(min(_MULE_MAX_SENDERS, max(_MULE_MIN_SENDERS, round(per_op_budget))))
         mule_instances = inject_mule_fanin(
             rng, payers, sim_start, days, used_vpas, used_device_ids,
             n_operations=n_mule_ops, min_senders=_MULE_MIN_SENDERS, max_senders=max_senders,
@@ -144,7 +168,7 @@ def _plan_and_inject_fraud(rng, payers, payees, sim_start, days, used_vpas,
 
     n_ato_instances = max(1, round(ato_budget / _ATO_AVG_EVENTS)) if ato_budget >= 1 else 0
     ato_instances = inject_ato_burst(
-        rng, payers, sim_start, days, payees_by_day, used_device_ids, n_ato_instances,
+        rng, payers, payees, sim_start, days, payees_by_day, used_device_ids, n_ato_instances,
     )
 
     regulars_by_payee = {}

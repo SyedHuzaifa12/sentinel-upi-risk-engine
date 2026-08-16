@@ -48,3 +48,6 @@ pytest==7.4.3
 # --- feature_lib (event-driven risk engine) ---
 psycopg[binary]==3.3.4
 redis==8.1.0
+
+# --- Phase 2 training (ml/src/train.py): cold/warm LightGBM models ---
+lightgbm==4.7.0

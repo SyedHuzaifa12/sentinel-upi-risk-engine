@@ -34,6 +34,20 @@ _MULE_LETTERS = "abcdefghijklmnopqrstuvwxyz"
 # "digit ratio" to separate legitimate traffic from disposable mule handles.
 PHONE_HANDLE_RATE = 0.375
 
+# Target overall share of LEGITIMATE events that are a payer's first-ever
+# payment to that payee (new shops, autos, one-off merchants -- a large
+# share of real UPI traffic, not an anomaly). Bug-fix constant: all four
+# fraud typologies target a payee new to the payer, and this used to be
+# rare for legit traffic too (~9%), which made "payee new to payer" an
+# accidental near-perfect proxy for the fraud label as a whole. See
+# PROGRESS.md "Bugs found and fixed."
+LEGIT_NEW_PAYEE_RATE = 0.30
+
+# Not every payer explores new payees at the same rate -- mixing two
+# archetypes (rather than one flat rate) is what makes HABITUAL_PAYER_FRACTION
+# meaningful instead of just being a relabeled single distribution.
+HABITUAL_PAYER_FRACTION = 0.55
+
 
 @dataclass
 class Payer:
@@ -49,6 +63,7 @@ class Payer:
     new_payee_rate: float
     recurring_payee_ids: list
     daily_txn_rate: float
+    archetype: str = "habitual"  # "habitual" or "exploratory" -- see LEGIT_NEW_PAYEE_RATE
     known_payee_ids: set = field(default_factory=set)
     collect_request_rate: float = 0.05
 
@@ -149,8 +164,21 @@ def build_payers(rng, n_payers, used_vpas):
         active_duration = int(rng.integers(8, 15))
         active_hour_end = min(23, active_hour_start + active_duration)
 
-        # Most people rarely try brand-new payees; a long tail is more adventurous.
-        new_payee_rate = float(rng.beta(2.0, 20.0))
+        # Two archetypes, not one flat rate: habitual payers have a small
+        # recurring set and rarely pay strangers; exploratory payers
+        # frequently pay new merchants/payees. The mix (not either rate
+        # alone) is tuned so the overall legit population lands near
+        # LEGIT_NEW_PAYEE_RATE -- verified empirically after generation,
+        # not just by this weighted average, since the actual realized
+        # rate also depends on the recurring-payee draw logic below.
+        is_exploratory = rng.random() >= HABITUAL_PAYER_FRACTION
+        if is_exploratory:
+            archetype = "exploratory"
+            new_payee_rate = float(rng.beta(5.5, 4.5))  # mean ~0.55
+        else:
+            archetype = "habitual"
+            new_payee_rate = float(rng.beta(1.4, 18.6))  # mean ~0.07
+
         collect_request_rate = float(rng.beta(1.5, 30.0))
         daily_txn_rate = float(rng.gamma(shape=2.0, scale=0.35))  # mean ~0.7 txns/day
 
@@ -167,6 +195,7 @@ def build_payers(rng, n_payers, used_vpas):
             new_payee_rate=new_payee_rate,
             recurring_payee_ids=[],
             daily_txn_rate=daily_txn_rate,
+            archetype=archetype,
             collect_request_rate=collect_request_rate,
         ))
     return payers

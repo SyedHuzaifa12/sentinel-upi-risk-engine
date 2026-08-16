@@ -1,7 +1,15 @@
 """Group D -- payee track record features. Warm only: every one of these
-is NaN + _is_missing whenever the payee is cold (payee_is_unseen), which is
-exactly how COLD/WARM routing shows up inside the feature vector itself,
-not just in is_cold(). All cold_safe=False.
+is NaN + _is_missing whenever the payee is literally unseen (count == 0).
+All cold_safe=False.
+
+Note this is a *different, finer-grained* gate than compute.is_cold()'s
+model-routing threshold (count < COLD_PAYEE_TXN_THRESHOLD, default 3): a
+payee with 1-2 prior transactions is routed to the cold model (too little
+data to be statistically meaningful), but here that just means these
+Group-D values sit unused in the vector rather than driving training --
+the cold model never trains on Group D at all. payee_amount_std and
+payee_p2m_ratio go further still, going missing under their own count < 2
+check, since a single observation can't support a variance/ratio estimate.
 """
 from datetime import timedelta
 
@@ -66,6 +74,11 @@ def payee_p2m_ratio(event, store):
     if result is None:
         return (float("nan"), True)
     p2m_count, total = result
+    if total < 2:
+        # A single prior transaction gives a fake-confident 0.0 or 1.0
+        # ratio, not a real estimate -- treat it as missing, same as
+        # payee_amount_std above.
+        return (float("nan"), True)
     return (p2m_count / total, False)
 
 

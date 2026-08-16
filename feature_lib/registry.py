@@ -5,8 +5,16 @@ package computes, and for the cold/warm split.
 the spec, plus payee_distinct_payers_since_first_seen). `REGISTRY` is
 mechanically derived from it -- every base entry, plus a second
 `<name>_is_missing` entry for every `can_be_missing` base feature -- so
-`COLD_FEATURES`/`WARM_FEATURES` can never hand-drift from the per-feature
-`cold_safe` flags: they're just a filter over `REGISTRY`.
+`COLD_FEATURES`/`WARM_ONLY_FEATURES`/`ALL_FEATURES` can never hand-drift
+from the per-feature `cold_safe` flags: they're just filters over
+`REGISTRY`.
+
+Naming note: there is deliberately no `WARM_FEATURES` name. The WARM model
+trains on ALL features (cold-safe ones remain informative once a payee is
+established), not just the warm-only ones -- an ambiguous "WARM_FEATURES"
+name invited exactly that silent bug, so `WARM_ONLY_FEATURES` is explicit
+about being the Group-D-only subset, and `ALL_FEATURES` is what the warm
+model actually trains on.
 """
 from dataclasses import dataclass
 from typing import Callable
@@ -90,4 +98,5 @@ def _expand(base_registry: list) -> list:
 REGISTRY: list[FeatureSpec] = _expand(BASE_REGISTRY)
 
 COLD_FEATURES: list[str] = [f.name for f in REGISTRY if f.cold_safe]
-WARM_FEATURES: list[str] = [f.name for f in REGISTRY if not f.cold_safe]
+WARM_ONLY_FEATURES: list[str] = [f.name for f in REGISTRY if not f.cold_safe]
+ALL_FEATURES: list[str] = [f.name for f in REGISTRY]

@@ -13,7 +13,10 @@ env/
 # Django
 backend/db.sqlite3
 backend/db.sqlite3.bak
-backend/media/
+# Only user-uploaded content is ignored -- default.jpg is a required app
+# asset (the default avatar), not user data, and must be tracked or a
+# fresh checkout (e.g. CI) has no avatar to fall back to at all.
+backend/media/profile_images/
 backend/static/
 
 # Environment variables / secrets
@@ -41,3 +44,7 @@ data/synthetic/*.csv
 
 # pytest cache (ml/tests/)
 .pytest_cache/
+
+# Session/agent working notes, not project source
+CLAUDE.md
+PROGRESS.md

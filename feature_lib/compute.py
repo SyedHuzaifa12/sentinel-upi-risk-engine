@@ -7,9 +7,18 @@ from .registry import BASE_REGISTRY
 from .store.base import HistoryStore
 from .vector import FeatureVector
 
+# A payee with 1-2 prior transactions is technically "seen," but its
+# Group-D signal (fan-in, amount-std, p2m-ratio) is computed from too few
+# observations to be statistically meaningful -- so it's still routed to
+# the cold model, not just a literal first-ever-payment. Overridable per
+# call for experimentation; the registered cold/warm split always uses
+# this default at training/serving time unless a caller explicitly
+# overrides it.
+COLD_PAYEE_TXN_THRESHOLD = 3
 
-def is_cold(event: UPIEvent, store: HistoryStore) -> bool:
-    return store.payee_txn_count(event.payee_vpa, as_of=event.timestamp) == 0
+
+def is_cold(event: UPIEvent, store: HistoryStore, threshold: int = COLD_PAYEE_TXN_THRESHOLD) -> bool:
+    return store.payee_txn_count(event.payee_vpa, as_of=event.timestamp) < threshold
 
 
 def compute_features(event: UPIEvent, store: HistoryStore) -> FeatureVector:
