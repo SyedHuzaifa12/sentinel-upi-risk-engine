@@ -13,7 +13,7 @@ from decisionlog import DecisionLog  # noqa: E402
 from feature_lib.event import UPIEvent  # noqa: E402
 from feature_lib.store.redis_store import RedisHistoryStore  # noqa: E402
 from service import scoring  # noqa: E402
-from worker.streams import DEAD_LETTER_STREAM, GROUP_NAME, RETRY_COUNT_KEY, STREAM_NAME  # noqa: E402
+from worker.streams import DEAD_LETTER_STREAM, RETRY_COUNT_KEY, STREAM_NAME  # noqa: E402
 
 
 def _test_redis_url():

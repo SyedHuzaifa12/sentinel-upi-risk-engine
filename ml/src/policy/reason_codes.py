@@ -10,12 +10,12 @@ touched (verified directly by bisecting the import order -- reproducible
 regardless of whether `shap` is involved at all). `import lightgbm` must be
 the first import in this module, before `pandas`.
 """
-import lightgbm  # noqa: F401  -- MUST be imported before pandas, see module docstring
+import sys
 import time
 from pathlib import Path
-import sys
 
 import joblib
+import lightgbm  # noqa: F401  -- MUST be imported before pandas, see module docstring
 import pandas as pd
 import shap
 

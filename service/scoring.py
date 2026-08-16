@@ -19,12 +19,12 @@ crashes with a native access-violation the first time its C API is touched.
 `import lightgbm` must happen before `feature_lib.frame` (which imports
 pandas) is imported anywhere below.
 """
-import lightgbm  # noqa: F401 -- MUST be imported before pandas, see module docstring
 import json
 import time
 from dataclasses import dataclass, field
 
 import joblib
+import lightgbm  # noqa: F401 -- MUST be imported before pandas, see module docstring
 import numpy as np
 
 from feature_lib.compute import compute_features

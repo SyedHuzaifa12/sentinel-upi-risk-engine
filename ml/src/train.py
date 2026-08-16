@@ -258,8 +258,10 @@ def run_pipeline(df, min_positives=MIN_TRAIN_POSITIVES, n_bootstrap=1000):
     cold_model, cold_calibrator = train_one_model(cold_train, cold_val, COLD_FEATURES, 'cold')
     warm_model, warm_calibrator = train_one_model(warm_train, warm_val, ALL_FEATURES, 'warm')
 
-    cold_metrics, cold_proba = evaluate_model(cold_model, cold_calibrator, cold_test, COLD_FEATURES, 'cold', n_bootstrap)
-    warm_metrics, warm_proba = evaluate_model(warm_model, warm_calibrator, warm_test, ALL_FEATURES, 'warm', n_bootstrap)
+    cold_metrics, cold_proba = evaluate_model(
+        cold_model, cold_calibrator, cold_test, COLD_FEATURES, 'cold', n_bootstrap)
+    warm_metrics, warm_proba = evaluate_model(
+        warm_model, warm_calibrator, warm_test, ALL_FEATURES, 'warm', n_bootstrap)
 
     # Ablation: does the warm model collapse to a single-feature detector
     # without pair-history? Required before accepting the 42.9% gain
@@ -279,7 +281,7 @@ def run_pipeline(df, min_positives=MIN_TRAIN_POSITIVES, n_bootstrap=1000):
     pr_auc_retained_share = (
         ablation_metrics['pr_auc'] / warm_metrics['pr_auc'] if warm_metrics['pr_auc'] else float('nan')
     )
-    print(f"\nAblation (no pair history) vs full warm model:")
+    print("\nAblation (no pair history) vs full warm model:")
     print(f"  Excluded features: {ABLATION_EXCLUDED_FEATURES}")
     print(f"  Full warm PR-AUC:     {warm_metrics['pr_auc']:.4f}")
     print(f"  Ablated PR-AUC:       {ablation_metrics['pr_auc']:.4f}  ({pr_auc_retained_share:.1%} retained)")
@@ -293,7 +295,8 @@ def run_pipeline(df, min_positives=MIN_TRAIN_POSITIVES, n_bootstrap=1000):
     combined_y = np.concatenate([cold_test['label_is_fraud'].to_numpy(), warm_test['label_is_fraud'].to_numpy()])
     combined_proba = np.concatenate([cold_proba, warm_proba])
     combined_amounts = np.concatenate([cold_test['amount'].to_numpy(), warm_test['amount'].to_numpy()])
-    combined_typologies = np.concatenate([cold_test['label_typology'].to_numpy(), warm_test['label_typology'].to_numpy()])
+    combined_typologies = np.concatenate(
+        [cold_test['label_typology'].to_numpy(), warm_test['label_typology'].to_numpy()])
 
     combined_metrics = {
         'n_test_events': len(combined_y),
@@ -305,7 +308,8 @@ def run_pipeline(df, min_positives=MIN_TRAIN_POSITIVES, n_bootstrap=1000):
     }
     for rate in ALERT_RATES:
         rate_key = f"{rate * 100:g}%"
-        combined_metrics['precision_at_alert_rate'][rate_key] = ev.precision_at_alert_rate(combined_y, combined_proba, rate)
+        combined_metrics['precision_at_alert_rate'][rate_key] = ev.precision_at_alert_rate(
+            combined_y, combined_proba, rate)
         combined_metrics['amount_weighted_recall_at_alert_rate'][rate_key] = ev.amount_weighted_recall(
             combined_y, combined_proba, combined_amounts, rate)
     combined_metrics['per_typology_recall'] = ev.per_typology_recall(
@@ -345,7 +349,8 @@ def _print_comparison_table(metrics_by_row):
         for rate_key, val in m['precision_at_alert_rate'].items():
             print(f"  Precision@{rate_key} alert rate: {val:.4f}")
         for rate_key, val in m['amount_weighted_recall_at_alert_rate'].items():
-            suffix = f"  CI={m['amount_weighted_recall_at_1pct_ci']}" if rate_key == '1%' and 'amount_weighted_recall_at_1pct_ci' in m else ""
+            has_ci = rate_key == '1%' and 'amount_weighted_recall_at_1pct_ci' in m
+            suffix = f"  CI={m['amount_weighted_recall_at_1pct_ci']}" if has_ci else ""
             print(f"  Amount-weighted recall@{rate_key}: {val:.4f}{suffix}")
         if 'brier_raw' in m:
             print(f"  Brier raw -> calibrated: {m['brier_raw']:.4f} -> {m['brier_calibrated']:.4f}")

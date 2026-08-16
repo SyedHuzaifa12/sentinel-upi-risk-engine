@@ -48,3 +48,13 @@ data/synthetic/*.csv
 # Session/agent working notes, not project source
 CLAUDE.md
 PROGRESS.md
+
+# Phase 6: local-file MLflow tracking store (file:./mlruns) -- experiment
+# runs/artifacts, not source. Never a server; see pipelines/train.py.
+mlruns/
+
+# Phase 6: generated backtest/drift reports -- reproducible outputs, not
+# source (unlike ml/artifacts/models/*.pkl and metrics_v2.json, which ARE
+# tracked so CI's quality gate has something to read without retraining).
+ml/artifacts/backtests/
+ml/artifacts/drift/

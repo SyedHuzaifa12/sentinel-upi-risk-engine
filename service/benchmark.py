@@ -59,8 +59,10 @@ def main():
     print(f"\n{'stage':<16}{'p50':>10}{'p95':>10}{'p99':>10}   (ms)")
     for stage in STAGES:
         vals = stage_samples[stage]
-        print(f"{stage:<16}{_percentile(vals, 0.50):>10.2f}{_percentile(vals, 0.95):>10.2f}{_percentile(vals, 0.99):>10.2f}")
-    print(f"{'total':<16}{_percentile(totals, 0.50):>10.2f}{_percentile(totals, 0.95):>10.2f}{_percentile(totals, 0.99):>10.2f}")
+        p50, p95, p99 = _percentile(vals, 0.50), _percentile(vals, 0.95), _percentile(vals, 0.99)
+        print(f"{stage:<16}{p50:>10.2f}{p95:>10.2f}{p99:>10.2f}")
+    t50, t95, t99 = _percentile(totals, 0.50), _percentile(totals, 0.95), _percentile(totals, 0.99)
+    print(f"{'total':<16}{t50:>10.2f}{t95:>10.2f}{t99:>10.2f}")
 
     p99_total = _percentile(totals, 0.99)
     verdict = "within" if p99_total <= LATENCY_BUDGET_P99_MS else "OVER"

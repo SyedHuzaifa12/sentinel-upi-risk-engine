@@ -274,4 +274,5 @@ class InMemoryHistoryStore(HistoryStore):
         self._device_histories.setdefault(event.device_id, _EntityHistory()).append(
             ts_epoch, event.payer_vpa, event.amount, is_p2m, is_collect, hour)
         self._pair_histories.setdefault((event.payer_vpa, event.payee_vpa), _TimestampHistory()).append(ts_epoch)
-        self._payer_device_histories.setdefault((event.payer_vpa, event.device_id), _TimestampHistory()).append(ts_epoch)
+        self._payer_device_histories.setdefault(
+            (event.payer_vpa, event.device_id), _TimestampHistory()).append(ts_epoch)

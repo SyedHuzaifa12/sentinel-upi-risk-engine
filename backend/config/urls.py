@@ -1,15 +1,11 @@
-from django.contrib import admin
-
-from django.urls import path, include, re_path
-from django.http import JsonResponse
-
 from django.conf import settings
 from django.conf.urls.static import static
-
+from django.contrib import admin
 from django.contrib.auth import views as auth_views
-from users.views.auth import CustomLoginView, ChangePasswordView
-
+from django.http import JsonResponse
+from django.urls import include, path, re_path
 from users.forms import LoginForm
+from users.views.auth import ChangePasswordView, CustomLoginView
 
 
 def healthz(request):

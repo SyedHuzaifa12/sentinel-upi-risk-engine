@@ -29,6 +29,8 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
+from feature_lib.registry import ALL_FEATURES, COLD_FEATURES  # noqa: E402
+from ml.src.data.load_synthetic import load_synthetic_events  # noqa: E402
 from ml.src.policy.cost_matrix import (  # noqa: E402
     FN_COST,
     FP_COST_BLOCK,
@@ -39,8 +41,6 @@ from ml.src.policy.cost_matrix import (  # noqa: E402
 from ml.src.train import build_feature_dataframe  # noqa: E402
 from ml.src.training.lightgbm_pipeline import apply_calibrator  # noqa: E402
 from ml.src.training.temporal_split import split_by_day  # noqa: E402
-from ml.src.data.load_synthetic import load_synthetic_events  # noqa: E402
-from feature_lib.registry import ALL_FEATURES, COLD_FEATURES  # noqa: E402
 from ml.src.utils.paths import (  # noqa: E402
     COLD_CALIBRATOR_PATH,
     COLD_MODEL_PATH,

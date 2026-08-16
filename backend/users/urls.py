@@ -1,8 +1,10 @@
 from django.urls import path
 
-from .views import auth, prediction, reports, pages
+from .views import auth, monitoring, pages, prediction, reports, review
 
 urlpatterns = [
+    path('review/', review.review_queue, name='review_queue'),
+    path('monitoring/', monitoring.monitoring_dashboard, name='monitoring_dashboard'),
     path('', auth.home, name='users-home'),
     path('register/', auth.RegisterView.as_view(), name='users-register'),
     path('profile/', auth.profile, name='users-profile'),

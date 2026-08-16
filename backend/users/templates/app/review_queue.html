@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analyst review queue</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: linear-gradient(160deg, #f4f9ff 0%, #e8f0f8 100%);
+            min-height: 100vh; padding: 2rem 1.5rem; color: #1c3144; line-height: 1.5;
+        }
+        .container { max-width: 1300px; margin: 0 auto; }
+        .card {
+            background: #fff; border-radius: 1.8rem; padding: 1.8rem 2rem;
+            box-shadow: 0 20px 40px -20px rgba(8,40,70,0.25); margin-bottom: 1.5rem;
+        }
+        h1 { font-size: 1.8rem; font-weight: 700; color: #123653; margin-bottom: 0.5rem; }
+        .caveat {
+            background: #fff3e0; border: 1.5px solid #ffcc80; border-radius: 1rem;
+            padding: 1rem 1.4rem; margin-top: 1rem; font-size: 0.92rem; color: #7a4a00;
+            display: flex; gap: 12px; align-items: flex-start;
+        }
+        .caveat i { color: #e07800; font-size: 1.2rem; margin-top: 2px; }
+        .stats-row { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-top: 1.2rem; }
+        .stat { background: #ecf3fa; border-radius: 1rem; padding: 0.8rem 1.4rem; min-width: 160px; }
+        .stat .label { font-size: 0.75rem; text-transform: uppercase; color: #4d6a86; letter-spacing: 0.03em; }
+        .stat .value { font-size: 1.5rem; font-weight: 700; color: #123653; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        th {
+            background: #f2f8ff; color: #0f3b5c; font-weight: 600; font-size: 0.78rem;
+            text-transform: uppercase; letter-spacing: 0.02em; padding: 0.9rem 0.7rem;
+            border-bottom: 2px solid #c9ddef; text-align: left;
+        }
+        td { padding: 0.85rem 0.7rem; border-bottom: 1px solid #e6eef7; vertical-align: top; }
+        .badge { display: inline-block; padding: 0.25rem 0.9rem; border-radius: 30px; font-weight: 600; font-size: 0.75rem; }
+        .badge-block { background: #fde7e9; color: #b11f2e; }
+        .badge-review { background: #fff0e0; color: #b05a1f; }
+        .reason-list { font-size: 0.8rem; color: #4d6a86; margin-top: 0.3rem; }
+        .reason-list li { margin-bottom: 2px; }
+        form.label-form { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+        select, input[type="text"] {
+            border: 1px solid #cbdae9; border-radius: 8px; padding: 0.4rem 0.6rem; font-size: 0.82rem;
+        }
+        button.label-btn {
+            background: #164466; color: white; border: none; border-radius: 8px;
+            padding: 0.45rem 0.9rem; font-size: 0.82rem; cursor: pointer; font-weight: 600;
+        }
+        button.label-btn:hover { background: #1f5a82; }
+        .pagination { margin-top: 1rem; display: flex; gap: 0.5rem; }
+        .pagination a { padding: 0.4rem 0.9rem; border-radius: 8px; background: #ecf3fa; color: #164466; text-decoration: none; }
+        .messages { margin-bottom: 1rem; }
+        .messages .msg { padding: 0.7rem 1.1rem; border-radius: 0.8rem; margin-bottom: 0.5rem; font-size: 0.9rem; }
+        .msg.success { background: #e2f3e8; color: #1a6e3b; }
+        .msg.error { background: #fde7e9; color: #b11f2e; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="card">
+        <h1><i class="fas fa-magnifying-glass"></i> Analyst review queue</h1>
+        <p style="color:#4d6a86;">Decisions with action REVIEW or BLOCK, newest first.</p>
+
+        <div class="caveat">
+            <i class="fas fa-triangle-exclamation"></i>
+            <div>
+                <strong>Selective labelling bias:</strong> only alerted transactions (REVIEW/BLOCK)
+                ever reach this queue, so "precision on reviewed cases" below is <em>not</em> the
+                model's true precision — it says nothing about fraud that was never flagged (false
+                negatives in the ALLOW tier) or about the ALLOW tier's real error rate. See
+                <code>DESIGN.md</code> for the full explanation. Do not report this number as
+                overall model precision.
+            </div>
+        </div>
+
+        <div class="stats-row">
+            <div class="stat"><div class="label">Queue depth</div><div class="value">{{ queue_depth }}</div></div>
+            <div class="stat"><div class="label">Median age</div>
+                <div class="value">{{ median_age_seconds|floatformat:0 }}s</div></div>
+            <div class="stat"><div class="label">Reviewed cases</div><div class="value">{{ total_labels }}</div></div>
+            <div class="stat"><div class="label">Precision (reviewed only)</div>
+                <div class="value">
+                    {% if reviewed_precision is not None %}{{ reviewed_precision|floatformat:1 }}%{% else %}—{% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+        <div class="msg {% if message.tags %}{{ message.tags }}{% endif %}">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="card">
+        <table>
+            <thead>
+                <tr>
+                    <th>Action</th>
+                    <th>Amount</th>
+                    <th>Payer / Payee VPA</th>
+                    <th>Risk score / tier</th>
+                    <th>Reason codes</th>
+                    <th>Scored at</th>
+                    <th>Label</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in page %}
+                <tr>
+                    <td>
+                        <span class="badge {% if d.action == 'BLOCK' %}badge-block{% else %}badge-review{% endif %}">
+                            {{ d.action }}
+                        </span>
+                    </td>
+                    <td>₹{{ d.event.amount|floatformat:2 }}</td>
+                    <td>{{ d.event.payer_vpa }}<br><span style="color:#7d95af;">→ {{ d.event.payee_vpa }}</span></td>
+                    <td>{{ d.risk_score|floatformat:4 }}<br><span style="color:#7d95af;">{{ d.risk_tier }}</span></td>
+                    <td>
+                        <ul class="reason-list">
+                            {% for code in d.reason_codes|slice:":3" %}
+                            <li>{{ code.message }}</li>
+                            {% endfor %}
+                        </ul>
+                    </td>
+                    <td>{{ d.scored_at }}</td>
+                    <td>
+                        <form class="label-form" method="post" action="{% url 'review_queue' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="decision_id" value="{{ d.id }}">
+                            <select name="disposition" required>
+                                <option value="" disabled selected>Choose…</option>
+                                {% for value, label in disposition_choices %}
+                                <option value="{{ value }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                            <input type="text" name="notes" placeholder="notes (optional)">
+                            <button type="submit" class="label-btn">Save</button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" style="text-align:center; padding:2rem; color:#748ea8;">
+                    Queue is empty — nothing pending review.
+                </td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="pagination">
+            {% if page.has_previous %}<a href="?page={{ page.previous_page_number }}">← Prev</a>{% endif %}
+            <span style="padding: 0.4rem;">Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+            {% if page.has_next %}<a href="?page={{ page.next_page_number }}">Next →</a>{% endif %}
+        </div>
+    </div>
+</div>
+</body>
+</html>

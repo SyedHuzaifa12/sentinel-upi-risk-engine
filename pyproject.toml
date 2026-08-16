@@ -1,0 +1,12 @@
+[tool.ruff]
+# Phase 6 CI gate. Deliberately narrow: this codebase is six phases old with no
+# prior lint enforcement -- the goal here is "catch real bugs going forward,"
+# not "retroactively restyle everything," which would be a large, unrelated
+# cleanup with real regression risk for no behavioral benefit.
+line-length = 120
+exclude = ["ml/legacy", "ml/notebooks", "**/migrations"]
+
+[tool.ruff.lint]
+# E: pycodestyle errors, F: pyflakes (unused imports, undefined names -- real
+# bugs), I: import sorting. No style-only rule families (no D, no ANN, no ARG...).
+select = ["E", "F", "I"]

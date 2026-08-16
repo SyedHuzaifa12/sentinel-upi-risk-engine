@@ -87,13 +87,12 @@ def main():
 
     print(f"\nExpected cost at chosen thresholds: {chosen_cost:,.2f}")
     print(f"Expected cost at naive 0.5 cutoff:   {naive_cost:,.2f}")
-    print(f"(lower is better; negative = net benefit)")
+    print("(lower is better; negative = net benefit)")
 
     n_alerts = sum(1 for p, is_cold in zip(all_proba, is_cold_flags)
                    if decide(p, is_cold, 0).action != "ALLOW")
     n_caught = sum(1 for p, label, is_cold in zip(all_proba, all_y, is_cold_flags)
                    if label == 1 and decide(p, is_cold, 0).action != "ALLOW")
-    n_fraud = int(all_y.sum())
     fraud_value = all_amount[all_y == 1].sum()
     caught_value = sum(amt for p, label, amt, is_cold in zip(all_proba, all_y, all_amount, is_cold_flags)
                         if label == 1 and decide(p, is_cold, amt).action != "ALLOW")

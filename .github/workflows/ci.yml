@@ -8,6 +8,39 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    # Phase 6: postgres+redis as GitHub Actions native service containers (not
+    # docker-compose -- CI doesn't run compose) so worker/tests and
+    # decisionlog/tests actually run in CI instead of skipping on a missing
+    # TEST_DATABASE_URL/TEST_REDIS_URL.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: sentinel
+          POSTGRES_USER: sentinel
+          POSTGRES_PASSWORD: sentinel
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U sentinel -d sentinel"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      TEST_DATABASE_URL: postgresql://sentinel:sentinel@localhost:5432/sentinel
+      TEST_REDIS_URL: redis://localhost:6379/0
+      DATABASE_URL: postgresql://sentinel:sentinel@localhost:5432/sentinel
+
     steps:
       - uses: actions/checkout@v4
 
@@ -18,13 +51,18 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      # Narrow on purpose -- E/F/I only, see pyproject.toml's comment for why
+      # this codebase isn't retroactively restyled in this phase.
+      - name: Lint (ruff)
+        run: ruff check .
+
       - name: Django system checks
         working-directory: backend
         env:
           SECRET_KEY: ci-only-secret-key
         run: python manage.py check
 
-      - name: Run tests
+      - name: Run backend/users tests
         working-directory: backend
         env:
           SECRET_KEY: ci-only-secret-key
@@ -41,3 +79,18 @@ jobs:
 
       - name: Run scoring service tests
         run: pytest service/tests
+
+      - name: Run worker tests
+        run: pytest worker/tests
+
+      - name: Run decisionlog tests
+        run: pytest decisionlog/tests
+
+      - name: Run pipelines tests
+        run: pytest pipelines/tests
+
+      # Model quality is a build artifact like any compiled binary: fail the
+      # build if warm PR-AUC (ml/artifacts/metrics/metrics_v2.json, committed
+      # alongside the models it describes) has regressed below 0.75.
+      - name: Model quality gate
+        run: python -m pipelines.quality_gate

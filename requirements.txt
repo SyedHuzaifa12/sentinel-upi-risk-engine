@@ -3,7 +3,7 @@ asgiref==3.5.2
 certifi==2022.9.24
 cffi==2.1.1
 charset-normalizer==2.1.1
-cryptography==38.0.1
+cryptography==38.0.4
 defusedxml==0.7.1
 Django==4.1.2
 idna==3.4
@@ -96,3 +96,33 @@ dj-database-url==2.2.0
 # feature_lib/decisionlog (their own psycopg3 API, `import psycopg`) --
 # different package/import name, no conflict with this one.
 psycopg2-binary==2.9.10
+
+# --- Phase 6: MLflow (local, no server), lint ---
+# mlflow-skinny, NOT full `mlflow`: skinny has zero numpy/pandas/scikit-learn/Flask
+# pins (verified via PyPI metadata -- no conflict with this repo's tight numpy==
+# 1.23.4/pandas==1.5.1 pins), and critically it *cannot* run `mlflow server`/
+# `mlflow ui` since Flask isn't installed -- the strongest possible guarantee of
+# "local, not a server" per CLAUDE.md's stack list. Tracking store is a local
+# `file:./mlruns` (or `sqlite:///mlruns.db` if FileStore doesn't support Model
+# Registry calls -- see PROGRESS.md's Phase 6 section for which one was actually used).
+mlflow-skinny==2.19.0
+
+# Bumped from 38.0.1 to 38.0.4 (still the 38.x series, not a major jump): a from-
+# scratch `pip install -r requirements.txt` pulled google-auth (via mlflow-skinny's
+# databricks-sdk dependency -- unconditional, not an extra, even though we never
+# touch Databricks), which requires cryptography>=38.0.3. Left unpinned, pip's
+# resolver jumped all the way to cryptography 50.0.0 (its default "pick latest
+# compatible" behavior) -- 38.0.4 is the minimal safe bump that satisfies
+# google-auth's floor without a large, unnecessary version jump. See the
+# cryptography==38.0.4 pin near the top of this file.
+
+# ruff: lint-only, CI gate. Config in pyproject.toml (E, F, I rules only --
+# see PROGRESS.md's Phase 6 section for why the rule set is deliberately narrow).
+ruff==0.8.6
+
+# scipy: already an installed transitive dependency of scikit-learn==1.1.3
+# (verified via the venv: scipy 1.13.1 was present with no separate install
+# needed), but pipelines/drift_check.py now imports it directly for
+# scipy.stats.ks_2samp -- pinning it explicitly rather than relying on an
+# undeclared transitive import.
+scipy==1.13.1

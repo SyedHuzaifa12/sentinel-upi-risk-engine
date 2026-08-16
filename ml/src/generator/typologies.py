@@ -13,8 +13,9 @@ instance in a way that would corrupt its behavioural pattern.
 """
 from datetime import timedelta
 
-from .population import BANK_HANDLES, make_disposable_vpa
 from feature_lib.event import new_event_dict as _new_event
+
+from .population import BANK_HANDLES, make_disposable_vpa
 
 _LOOKALIKE_SWAPS = {"a": "4", "e": "3", "i": "1", "o": "0", "s": "5"}
 

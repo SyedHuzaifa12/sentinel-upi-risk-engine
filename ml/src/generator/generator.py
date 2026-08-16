@@ -11,12 +11,13 @@ from datetime import datetime, timedelta, timezone
 
 import numpy as np
 
+from feature_lib.event import UPIEvent, make_ulid, new_event_dict
+
 from .population import (
     assign_recurring_payees,
     build_payees,
     build_payers,
 )
-from feature_lib.event import UPIEvent, make_ulid, new_event_dict
 from .typologies import inject_ato_burst, inject_mule_fanin, inject_qr_swap, inject_scam_collect
 
 # Fraud-budget weights (fraction of the target fraud-event count). MULE_FANIN
