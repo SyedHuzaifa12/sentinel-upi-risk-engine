@@ -2,6 +2,7 @@
 full ml/src/generator pipeline -- feature_lib's tests stay independent of
 generator internals and run fast.
 """
+import math
 import sys
 from pathlib import Path
 
@@ -34,17 +35,56 @@ def make_event(txn_id, timestamp, payer_vpa, payee_vpa, amount=500.0, device_id=
     )
 
 
-def _values_equal(a, b):
-    if isinstance(a, float) and isinstance(b, float) and a != a and b != b:
-        return True  # both NaN
-    return a == b
+# FLOAT_REL_TOL / FLOAT_ABS_TOL: InMemoryHistoryStore computes variance-based
+# features (e.g. amount_zscore_vs_payer_30d) via an incremental running
+# sum-of-squares in Python, while PostgresHistoryStore computes the same
+# quantity via SQL's STDDEV_POP() aggregate -- a different implementation,
+# summing in a different order. Both are correct; IEEE 754 doubles are not
+# associative under addition, so two correct algorithms for the same formula
+# can disagree in the last bit or two (observed: ~5e-16 relative difference
+# on amount_zscore_vs_payer_30d against a live Postgres parity run). 1e-9 is
+# ~7 orders of magnitude looser than that noise floor and ~7 orders of
+# magnitude tighter than anything that could move a model's predicted
+# probability across a decision threshold -- this is "ignore floating-point
+# noise," not "accept a real numeric discrepancy." NaN-vs-NaN and missing-ness
+# are still required to match EXACTLY (a value missing in one store and
+# present in the other IS a real bug), and bools/ints/strings get no
+# tolerance at all.
+FLOAT_REL_TOL = 1e-9
+FLOAT_ABS_TOL = 1e-12
 
 
-def assert_vectors_equal(values_a: dict, values_b: dict):
+def _rel_diff(a: float, b: float) -> float:
+    if a == b:
+        return 0.0
+    denom = max(abs(a), abs(b), 1e-300)
+    return abs(a - b) / denom
+
+
+def assert_vectors_equal(values_a: dict, values_b: dict) -> float:
+    """Exact equality for bools/ints/strings and for NaN-vs-NaN/missingness;
+    a float-vs-float comparison tolerates only IEEE-754-noise-level
+    disagreement (see FLOAT_REL_TOL/FLOAT_ABS_TOL above). Returns the maximum
+    relative float difference observed, so callers can print it -- future
+    drift beyond noise should be visible, not silently absorbed."""
     assert values_a.keys() == values_b.keys()
-    mismatches = {
-        key: (values_a[key], values_b[key])
-        for key in values_a
-        if not _values_equal(values_a[key], values_b[key])
-    }
+
+    mismatches = {}
+    max_rel_diff = 0.0
+    for key in values_a:
+        a, b = values_a[key], values_b[key]
+        if isinstance(a, float) and isinstance(b, float):
+            a_nan, b_nan = (a != a), (b != b)
+            if a_nan or b_nan:
+                if a_nan != b_nan:  # exactly one is NaN -- never acceptable
+                    mismatches[key] = (a, b)
+                continue  # both NaN: matches
+            if not math.isclose(a, b, rel_tol=FLOAT_REL_TOL, abs_tol=FLOAT_ABS_TOL):
+                mismatches[key] = (a, b)
+            else:
+                max_rel_diff = max(max_rel_diff, _rel_diff(a, b))
+        elif a != b:
+            mismatches[key] = (a, b)
+
     assert not mismatches, f"feature vectors differ: {mismatches}"
+    return max_rel_diff

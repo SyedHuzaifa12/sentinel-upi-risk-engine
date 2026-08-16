@@ -2,11 +2,15 @@
 -> decide -> reason codes (non-ALLOW only).
 
 Models/calibrators are NOT loaded at import time -- call load_models() once,
-from service/main.py's lifespan, AFTER the feature-registry startup guard
-has verified the saved models agree with feature_lib.registry. That
-ordering is load-bearing: it's what lets the guard actually refuse to start
-before anything (possibly stale/mismatched) is resident in memory. Do not
-move the joblib.load calls back to module level.
+from service/main.py's lifespan (or worker/consumer.py's / worker/ingest.py's
+own startup -- this module has THREE callers as of Phase 5: API, worker,
+batch ingest). load_models() itself runs the feature-registry startup guard
+FIRST and raises before touching disk for the actual model artifacts if the
+saved model disagrees with feature_lib.registry. That ordering is
+load-bearing: it's what lets every caller refuse to start before anything
+(possibly stale/mismatched) is resident in memory, without each caller having
+to remember to run the guard itself -- do not move the guard back out to
+main.py or duplicate it in worker/.
 
 Import-order note (load-bearing, do not reorder -- same issue documented in
 ml/src/policy/reason_codes.py): if `pandas` is imported before the bare
@@ -16,6 +20,7 @@ crashes with a native access-violation the first time its C API is touched.
 pandas) is imported anywhere below.
 """
 import lightgbm  # noqa: F401 -- MUST be imported before pandas, see module docstring
+import json
 import time
 from dataclasses import dataclass, field
 
@@ -29,7 +34,13 @@ from feature_lib.registry import ALL_FEATURES, COLD_FEATURES
 from feature_lib.store.base import HistoryStore
 from ml.src.policy.decide import decide
 from ml.src.training.lightgbm_pipeline import apply_calibrator
-from ml.src.utils.paths import COLD_CALIBRATOR_PATH, COLD_MODEL_PATH, WARM_CALIBRATOR_PATH, WARM_MODEL_PATH
+from ml.src.utils.paths import (
+    COLD_CALIBRATOR_PATH,
+    COLD_MODEL_PATH,
+    FEATURE_REGISTRY_PATH,
+    WARM_CALIBRATOR_PATH,
+    WARM_MODEL_PATH,
+)
 
 _cold_model = None
 _warm_model = None
@@ -39,15 +50,38 @@ _compute_reason_codes = None
 _loaded = False
 
 
+def _assert_feature_registry_matches_code():
+    with open(FEATURE_REGISTRY_PATH) as f:
+        registry = json.load(f)
+
+    mismatches = []
+    if registry["cold_model"]["features"] != COLD_FEATURES:
+        mismatches.append("cold_model.features != feature_lib.registry.COLD_FEATURES")
+    if registry["warm_model"]["features"] != ALL_FEATURES:
+        mismatches.append("warm_model.features != feature_lib.registry.ALL_FEATURES")
+
+    if mismatches:
+        raise RuntimeError(
+            "Refusing to start: feature_registry.json disagrees with feature_lib.registry "
+            f"({'; '.join(mismatches)}). The saved model was trained against a different "
+            "feature set than the code currently computes -- retrain (python ml/src/train.py) "
+            "before serving."
+        )
+    return registry
+
+
 def load_models():
-    """Loads cold/warm models + calibrators, then -- only now -- imports
-    ml.src.policy.reason_codes. That module eagerly loads its own model
-    copies and builds SHAP TreeExplainers at IMPORT time (a Phase 3 design
-    choice we're not changing); importing it lazily here rather than at
-    this module's top level is what keeps that load from happening before
-    the caller's startup guard has run.
+    """Runs the feature-registry startup guard FIRST, then loads cold/warm
+    models + calibrators, then -- only now -- imports ml.src.policy.reason_codes
+    (which itself eagerly loads its own model copies and builds SHAP
+    TreeExplainers at IMPORT time, a Phase 3 design choice we're not
+    changing). Returns the feature_registry.json dict so callers (API
+    lifespan, worker startup) can read model_version/etc without a second
+    file read.
     """
     global _cold_model, _warm_model, _cold_calibrator, _warm_calibrator, _compute_reason_codes, _loaded
+
+    registry = _assert_feature_registry_matches_code()
 
     _cold_model = joblib.load(COLD_MODEL_PATH)
     _warm_model = joblib.load(WARM_MODEL_PATH)
@@ -58,6 +92,8 @@ def load_models():
     _compute_reason_codes = compute_reason_codes
     _loaded = True
 
+    return registry
+
 
 def is_loaded() -> bool:
     return _loaded
@@ -67,6 +103,7 @@ def is_loaded() -> bool:
 class ScoreResult:
     txn_id: str
     risk_score: float
+    raw_score: float
     action: str
     risk_tier: str
     reason_codes: list
@@ -74,6 +111,7 @@ class ScoreResult:
     thresholds_version: str
     is_cold: bool
     features_computed: int
+    feature_snapshot: dict
     latency_ms: float
     # Per-stage breakdown -- logged and read by service/benchmark.py, not
     # part of the /v1/score wire response (that returns latency_ms only).
@@ -83,7 +121,8 @@ class ScoreResult:
 def score_event(event: UPIEvent, store: HistoryStore) -> ScoreResult:
     if not _loaded:
         raise RuntimeError(
-            "scoring.load_models() must run before score_event() -- see service/main.py's lifespan."
+            "scoring.load_models() must run before score_event() -- see service/main.py's "
+            "lifespan or worker/consumer.py's / worker/ingest.py's startup."
         )
 
     t0 = time.perf_counter()
@@ -129,6 +168,7 @@ def score_event(event: UPIEvent, store: HistoryStore) -> ScoreResult:
     return ScoreResult(
         txn_id=event.txn_id,
         risk_score=decision.risk_score,
+        raw_score=float(proba_raw),
         action=decision.action,
         risk_tier=decision.risk_tier,
         reason_codes=reason_codes,
@@ -136,6 +176,12 @@ def score_event(event: UPIEvent, store: HistoryStore) -> ScoreResult:
         thresholds_version=decision.thresholds_version,
         is_cold=cold,
         features_computed=len(vector.values),
+        # compute_features() always fills every feature_lib.registry.ALL_FEATURES
+        # entry regardless of cold/warm routing (COLD_FEATURES is just a column
+        # filter applied above, at prediction time) -- so this is always the
+        # FULL computed vector, never a subset, satisfying the "audit and
+        # replay" requirement on the decision log's feature_snapshot.
+        feature_snapshot=dict(vector.values),
         latency_ms=(t5 - t0) * 1000,
         stage_latency_ms=stage_ms,
     )

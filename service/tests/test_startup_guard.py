@@ -2,11 +2,11 @@ import json
 
 import pytest
 
-from service import main as service_main
+from service import scoring
 
 
 def test_matching_registry_passes(tmp_path):
-    real = service_main._assert_feature_registry_matches_code()
+    real = scoring._assert_feature_registry_matches_code()
     assert "cold_model" in real and "warm_model" in real
 
 
@@ -18,7 +18,7 @@ def test_mismatched_registry_refuses_to_start(tmp_path, monkeypatch):
     bad_path = tmp_path / "feature_registry.json"
     bad_path.write_text(json.dumps(bad_registry))
 
-    monkeypatch.setattr(service_main, "FEATURE_REGISTRY_PATH", bad_path)
+    monkeypatch.setattr(scoring, "FEATURE_REGISTRY_PATH", bad_path)
 
     with pytest.raises(RuntimeError, match="Refusing to start"):
-        service_main._assert_feature_registry_matches_code()
+        scoring._assert_feature_registry_matches_code()

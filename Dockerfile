@@ -15,10 +15,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-WORKDIR /app/backend
-RUN chmod +x docker-entrypoint.sh \
-    && DEBUG=True python manage.py collectstatic --noinput
+RUN chmod +x backend/docker-entrypoint.sh \
+    && cd backend && DEBUG=True python manage.py collectstatic --noinput
 
+# Shared image for ui/api/worker/generator (Phase 5) -- one build, reused by all
+# four docker-compose services via per-service `command`/`working_dir` instead of
+# a baked-in ENTRYPOINT, so disk isn't spent on four near-identical images.
+# The Django container sets working_dir: /app/backend and
+# entrypoint: ["./docker-entrypoint.sh"] itself in docker-compose.yml.
 EXPOSE 8000
-
-ENTRYPOINT ["./docker-entrypoint.sh"]

@@ -78,3 +78,21 @@ shap==0.48.0
 fastapi==0.115.6
 uvicorn[standard]==0.34.0
 httpx==0.28.1
+
+# --- Phase 5: Docker Compose, Postgres as the real backend ---
+# Pinned to 2.2.0, NOT the latest (2.3.0): dj-database-url>=2.3 requires
+# Django>=4.2, which conflicts with Django==4.1.2 pinned above -- this broke
+# a from-scratch `pip install -r requirements.txt` in the Docker build with
+# ResolutionImpossible (same class of bug as the shap/numpy conflict earlier
+# in this file: an incremental local install doesn't re-resolve already-
+# installed packages, so it looked fine locally; a clean single-pass resolve,
+# which is exactly what building a fresh image does, correctly refuses it).
+# 2.2.0 only requires Django>=3.2, comfortably satisfied by 4.1.2.
+dj-database-url==2.2.0
+
+# Django's built-in `django.db.backends.postgresql` engine imports psycopg2,
+# not psycopg (v3) -- Django only added native psycopg3 support in 4.2+, and
+# this repo is pinned to Django==4.1.2. `psycopg[binary]==3.3.4` above is for
+# feature_lib/decisionlog (their own psycopg3 API, `import psycopg`) --
+# different package/import name, no conflict with this one.
+psycopg2-binary==2.9.10

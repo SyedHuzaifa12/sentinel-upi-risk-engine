@@ -4,14 +4,14 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, Request
 
 from . import scoring
-from .deps import get_store
+from .deps import get_decision_log, get_store
 from .schemas import HealthResponse, ModelInfoResponse, ScoreRequest, ScoreResponse, to_upi_event
 
 router = APIRouter()
 
 
 @router.post("/v1/score", response_model=ScoreResponse)
-def score(body: ScoreRequest, request: Request, store=Depends(get_store)):
+def score(body: ScoreRequest, request: Request, store=Depends(get_store), decision_log=Depends(get_decision_log)):
     event = to_upi_event(body)
     result = scoring.score_event(event, store)
 
@@ -19,6 +19,24 @@ def score(body: ScoreRequest, request: Request, store=Depends(get_store)):
         "scored txn_id=%s action=%s is_cold=%s stage_latency_ms=%s total_ms=%.2f",
         result.txn_id, result.action, result.is_cold, result.stage_latency_ms, result.latency_ms,
     )
+
+    if decision_log is not None:
+        decision_log.record(
+            txn_id=result.txn_id,
+            event=body.model_dump(mode="json"),
+            feature_snapshot=result.feature_snapshot,
+            risk_score=result.risk_score,
+            raw_score=result.raw_score,
+            is_cold=result.is_cold,
+            action=result.action,
+            risk_tier=result.risk_tier,
+            reason_codes=result.reason_codes,
+            model_version=result.model_version,
+            thresholds_version=result.thresholds_version,
+            latency_ms=result.latency_ms,
+            scored_at=datetime.now(timezone.utc),
+            source="api",
+        )
 
     return ScoreResponse(
         txn_id=result.txn_id,

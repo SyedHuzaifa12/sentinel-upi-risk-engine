@@ -21,9 +21,9 @@ def build_store() -> HistoryStore:
         return InMemoryHistoryStore()
     if backend == "postgres":
         from feature_lib.store.postgres import PostgresHistoryStore
-        if not config.POSTGRES_DSN:
-            raise RuntimeError("STORE_BACKEND=postgres requires POSTGRES_DSN to be set.")
-        return PostgresHistoryStore(config.POSTGRES_DSN)
+        if not config.DATABASE_URL:
+            raise RuntimeError("STORE_BACKEND=postgres requires DATABASE_URL to be set.")
+        return PostgresHistoryStore(config.DATABASE_URL)
     if backend == "redis":
         from feature_lib.store.redis_store import RedisHistoryStore
         if not config.REDIS_URL:
@@ -34,3 +34,7 @@ def build_store() -> HistoryStore:
 
 def get_store(request: Request) -> HistoryStore:
     return request.app.state.store
+
+
+def get_decision_log(request: Request):
+    return request.app.state.decision_log

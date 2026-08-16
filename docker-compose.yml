@@ -1,0 +1,110 @@
+name: sentinel-upi-risk-engine
+
+x-app-image: &app-image
+  build: .
+  image: sentinel-upi-risk-engine:app
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-sentinel}
+      POSTGRES_USER: ${POSTGRES_USER:-sentinel}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sentinel}
+    # Modest settings for a 4 CPU / 5.7GB RAM host -- not tuned for a large
+    # machine. shared_buffers=128MB / effective_cache_size=256MB keep Postgres's
+    # own footprint small alongside Redis and three Python services.
+    command: >
+      postgres -c shared_buffers=128MB -c max_connections=50 -c effective_cache_size=256MB
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sentinel} -d ${POSTGRES_DB:-sentinel}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    # noeviction (not allkeys-lru): silently dropping stream entries or decision
+    # data under memory pressure would be worse than XADD erroring loudly.
+    # --save "" disables RDB snapshotting -- keeps disk usage down for a
+    # dev/demo stack where stream durability across a full restart isn't required.
+    command: >
+      redis-server --maxmemory 256mb --maxmemory-policy noeviction --save ""
+    volumes:
+      - redisdata:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    <<: *app-image
+    command: uvicorn service.main:app --host 0.0.0.0 --port 8001
+    environment:
+      STORE_BACKEND: redis
+      REDIS_URL: redis://redis:6379/0
+      DATABASE_URL: postgresql://${POSTGRES_USER:-sentinel}:${POSTGRES_PASSWORD:-sentinel}@postgres:5432/${POSTGRES_DB:-sentinel}
+      SEED_EVENTS: "false"
+    ports:
+      - "8001:8001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    <<: *app-image
+    command: python -m worker.consumer
+    environment:
+      STORE_BACKEND: redis
+      REDIS_URL: redis://redis:6379/0
+      DATABASE_URL: postgresql://${POSTGRES_USER:-sentinel}:${POSTGRES_PASSWORD:-sentinel}@postgres:5432/${POSTGRES_DB:-sentinel}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  ui:
+    <<: *app-image
+    working_dir: /app/backend
+    entrypoint: ["./docker-entrypoint.sh"]
+    environment:
+      SECRET_KEY: ${SECRET_KEY:-django-insecure-local-dev-only-key-do-not-use-in-production}
+      DEBUG: ${DEBUG:-True}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-sentinel}:${POSTGRES_PASSWORD:-sentinel}@postgres:5432/${POSTGRES_DB:-sentinel}
+      RISK_API_URL: http://api:8001
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      api:
+        condition: service_started
+
+  # Event replay producer. Profile-gated -- does NOT start on a plain
+  # `docker compose up`; run explicitly with `docker compose --profile tools run generator`.
+  generator:
+    <<: *app-image
+    profiles: ["tools"]
+    command: python -m worker.producer --speed 0
+    environment:
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      redis:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  redisdata:

@@ -14,6 +14,7 @@ import sys
 import warnings
 from pathlib import Path
 
+import dj_database_url
 from django.core.exceptions import ImproperlyConfigured
 
 # To keep secret keys in environment variables
@@ -130,11 +131,13 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
+# Phase 5: DATABASE_URL (set by docker-compose.yml, pointing at the `postgres`
+# service) switches this to Postgres. Falls back to the pre-existing SQLite
+# file when unset, so `manage.py test`/local dev without Docker are unaffected.
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config(
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+    )
 }
 
 

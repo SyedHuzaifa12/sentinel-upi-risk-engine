@@ -1,9 +1,14 @@
 """Parity: InMemory and Postgres stores return identical vectors for the
 same input. Skips (with a printed reason) if TEST_DATABASE_URL is unset or
-the connection fails -- neither Postgres nor Redis is reachable in this dev
-environment (confirmed during Phase 1 planning), so this test is expected
-to skip here until real infra is wired up. It is a real implementation
-being validated, not a stub.
+the connection fails -- useful for running this file without Docker up.
+Passes for real (not skipped) against a live Postgres container (Phase 5) --
+see docker-compose.yml and PROGRESS.md's Phase 5 section.
+
+Float comparisons tolerate only IEEE-754-noise-level disagreement (see
+conftest.py's FLOAT_REL_TOL/FLOAT_ABS_TOL) -- InMemoryHistoryStore's
+incremental variance and Postgres's STDDEV_POP() are both correct, just
+summed in a different order. Exact equality is still required everywhere
+else (ints/bools/strings, NaN-vs-NaN, missingness).
 """
 import os
 from datetime import datetime, timedelta, timezone
@@ -13,7 +18,7 @@ import pytest
 from feature_lib.compute import compute_features, compute_features_batch
 from feature_lib.store.in_memory import InMemoryHistoryStore
 
-from .conftest import assert_vectors_equal, make_event
+from .conftest import FLOAT_REL_TOL, assert_vectors_equal, make_event
 
 T0 = datetime(2026, 1, 1, tzinfo=timezone.utc)
 
@@ -54,7 +59,9 @@ def test_in_memory_and_postgres_agree_on_the_same_input():
         memory_vector = compute_features(target, memory_store)
         pg_vector = compute_features(target, pg_store)
 
-        assert_vectors_equal(memory_vector.values, pg_vector.values)
+        max_rel_diff = assert_vectors_equal(memory_vector.values, pg_vector.values)
         assert memory_vector.is_cold == pg_vector.is_cold
+        print(f"\nPostgres parity: PASSED. Max relative float difference observed: "
+              f"{max_rel_diff:.3e} (tolerance: {FLOAT_REL_TOL:.0e})")
     finally:
         pg_store.close()
