@@ -32,3 +32,8 @@ FEATURE_REGISTRY_PATH = MODELS_DIR / 'feature_registry.json'
 METRICS_V2_PATH = METRICS_DIR / 'metrics_v2.json'
 RELIABILITY_COLD_PATH = METRICS_DIR / 'reliability_cold.json'
 RELIABILITY_WARM_PATH = METRICS_DIR / 'reliability_warm.json'
+
+# Phase 3 (ml/src/policy/): decision policy artifacts.
+POLICY_DIR = ARTIFACTS_DIR / 'policy'
+THRESHOLDS_PATH = POLICY_DIR / 'thresholds.json'
+THRESHOLD_CURVE_PATH = METRICS_DIR / 'threshold_curve.json'

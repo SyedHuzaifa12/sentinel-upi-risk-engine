@@ -32,7 +32,7 @@ def analyze_upi(request):
             messages.error(request, f'Could not analyze this transaction: {exc}')
             return redirect(to='prediction')
 
-        UserPredictModel.objects.create(
+        record = UserPredictModel.objects.create(
             user=request.user,
             AverageAmountTransactionDay=data['AverageAmountTransactionDay'],
             TransactionAmount=data['TransactionAmount'],
@@ -51,6 +51,10 @@ def analyze_upi(request):
             'prediction': result.label,
             'fraud_probability': round(result.fraud_probability * 100, 1),
             'top_features': result.top_features,
+            # Real values, not the template's literal placeholder fallbacks:
+            # this row's own creation timestamp and database id.
+            'timestamp': record.created_at,
+            'reference_id': record.id,
         })
 
     return redirect(to='prediction')

@@ -487,24 +487,20 @@
         {% endif %}
     </div>
 
-    <!-- FRAUDULENT CASE: show detailed guidance sections + comprehensive fraud education -->
+    <!-- FRAUDULENT CASE: show detailed guidance sections -->
     {% if prediction == "Y" or prediction == "y" or prediction == "Yes" or prediction == "FRAUD" %}
     <div class="fraud-details-grid">
-        <!-- Fraud details -->
-        <div class="detail-card">
-            <div class="card-header">
-                <i class="fas fa-magnifying-glass-dollar"></i>
-                <h3>Fraud details</h3>
-            </div>
-            <ul class="bullet-list">
-                <li><i class="fas fa-angle-right"></i> <span><strong>Transaction pattern anomaly:</strong> Amount deviates from daily average by >300%.</span></li>
-                <li><i class="fas fa-angle-right"></i> <span><strong>High-risk indicators:</strong> Foreign transaction + previous decline spike today.</span></li>
-                <li><i class="fas fa-angle-right"></i> <span><strong>Chargeback velocity:</strong> 6‑month chargeback frequency exceeds 3, with above‑average amount.</span></li>
-                <li><i class="fas fa-angle-right"></i> <span><strong>Device/location mismatch:</strong> Transaction origin differs from registered geolocation.</span></li>
-                <li><i class="fas fa-angle-right"></i> <span><strong>Unusual timing:</strong> Transaction initiated outside normal activity hours (2 AM – 4 AM).</span></li>
-            </ul>
-            <div class="soft-meta">based on real‑time risk scoring</div>
-        </div>
+        <!--
+            Per-transaction "Fraud details" used to be hardcoded here (fixed
+            chargeback/device/location claims shown for every single
+            prediction regardless of the actual input) -- deleted, since
+            they were never true. Real per-transaction reason codes (SHAP
+            contributions from the actual cold/warm model, via
+            ml/src/policy/reason_codes.py) land here once Phase 4 wires the
+            v2 scoring API into a live request path; this legacy view still
+            scores through the old RandomForest model, which the new
+            decision/reason-code layer isn't attached to yet.
+        -->
 
         <!-- Prevention strategies -->
         <div class="detail-card">
@@ -573,14 +569,44 @@
         </div>
     </div>
 
-    <!-- ========= COMPREHENSIVE FRAUD EDUCATION SECTION (shown for FRAUD case) ========= -->
+    <!-- NO FRAUD: show safe state + same comprehensive fraud education (for awareness) -->
+    {% else %}
+    <div class="safe-panel">
+        <div class="safe-icon">
+            <i class="fas fa-shield-check"></i>
+        </div>
+        <div class="safe-message">Transaction appears legitimate</div>
+        <div class="safe-note">
+            <i class="fas fa-circle-info" style="margin-right: 6px;"></i>
+            No fraudulent indicators triggered. However, always follow basic safety practices.
+        </div>
+        <!-- quick mini grid with 2 soft prevention cards (smaller) -->
+        <div style="display: flex; gap: 1.2rem; margin-top: 2rem; flex-wrap: wrap; justify-content: center;">
+            <div style="background: #e6f2ea; padding: 1.2rem 1.8rem; border-radius: 40px; font-size:0.95rem;">
+                <i class="fas fa-phone-alt" style="color:#1e6d3d;"></i> Report lost card immediately
+            </div>
+            <div style="background: #e6f2ea; padding: 1.2rem 1.8rem; border-radius: 40px; font-size:0.95rem;">
+                <i class="fas fa-qrcode" style="color:#1e6d3d;"></i> Scan only trusted QR codes
+            </div>
+        </div>
+        <p style="margin-top: 1.8rem; font-size:0.9rem; color:#4f7f64;">
+            <i class="fas fa-lock-open"></i> stay vigilant — UPI safety is continuous
+        </p>
+    </div>
+
+    {% endif %}
+
+    <!-- ========= COMPREHENSIVE FRAUD EDUCATION SECTION ========= -->
+    <!-- Generic, honest static content (not a per-transaction claim) --
+         rendered once regardless of the prediction, instead of being
+         duplicated verbatim across both branches. -->
     <div class="education-section">
         <div class="edu-header">
             <i class="fas fa-graduation-cap"></i>
             <h2>Understanding UPI frauds · types, risks & safety</h2>
         </div>
         <p style="margin-bottom: 1.5rem; color: #2b4b6e; font-size: 1.05rem; background: #ffffffb0; padding: 0.8rem 1.5rem; border-radius: 60px;">
-            <i class="fas fa-circle-info" style="color: #b63e32;"></i> 
+            <i class="fas fa-circle-info" style="color: #b63e32;"></i>
             There are <strong>8 major types of UPI frauds</strong> — below is how they occur, which ones are most dangerous, and how to stay protected.
         </p>
 
@@ -709,184 +735,15 @@
         <!-- summary safety mantra -->
         <div style="margin-top: 2rem; background: #ffffffdb; padding: 1.5rem 2rem; border-radius: 50px; text-align: center; border: 1px solid #acc9e5;">
             <i class="fas fa-hexagon-exclamation" style="color:#b63e32; margin-right: 12px;"></i>
-            <span style="font-weight: 500;">Golden rule: </span> 
+            <span style="font-weight: 500;">Golden rule: </span>
             <strong>STOP · THINK · VERIFY</strong> — UPI frauds rely on urgency and secrecy. No exception.
         </div>
     </div>
-    <!-- END fraud case with education -->
 
-    <!-- NO FRAUD: show safe state + same comprehensive fraud education (for awareness) -->
-    {% else %}
-    <div class="safe-panel">
-        <div class="safe-icon">
-            <i class="fas fa-shield-check"></i>
-        </div>
-        <div class="safe-message">Transaction appears legitimate</div>
-        <div class="safe-note">
-            <i class="fas fa-circle-info" style="margin-right: 6px;"></i>
-            No fraudulent indicators triggered. However, always follow basic safety practices.
-        </div>
-        <!-- quick mini grid with 2 soft prevention cards (smaller) -->
-        <div style="display: flex; gap: 1.2rem; margin-top: 2rem; flex-wrap: wrap; justify-content: center;">
-            <div style="background: #e6f2ea; padding: 1.2rem 1.8rem; border-radius: 40px; font-size:0.95rem;">
-                <i class="fas fa-phone-alt" style="color:#1e6d3d;"></i> Report lost card immediately
-            </div>
-            <div style="background: #e6f2ea; padding: 1.2rem 1.8rem; border-radius: 40px; font-size:0.95rem;">
-                <i class="fas fa-qrcode" style="color:#1e6d3d;"></i> Scan only trusted QR codes
-            </div>
-        </div>
-        <p style="margin-top: 1.8rem; font-size:0.9rem; color:#4f7f64;">
-            <i class="fas fa-lock-open"></i> stay vigilant — UPI safety is continuous
-        </p>
-    </div>
-
-    <!-- ========= COMPREHENSIVE FRAUD EDUCATION SECTION (shown for NON-FRAUD case) ========= -->
-    <div class="education-section">
-        <div class="edu-header">
-            <i class="fas fa-graduation-cap"></i>
-            <h2>Understanding UPI frauds · types, risks & safety</h2>
-        </div>
-        <p style="margin-bottom: 1.5rem; color: #2b4b6e; font-size: 1.05rem; background: #ffffffb0; padding: 0.8rem 1.5rem; border-radius: 60px;">
-            <i class="fas fa-circle-info" style="color: #1f7840;"></i> 
-            Even though this transaction is safe, stay informed. There are <strong>8 major types of UPI frauds</strong> — below is how they occur, which ones are most dangerous, and how to stay protected.
-        </p>
-
-        <div class="fraud-types-grid">
-            <!-- 1. Phishing / Vishing (high danger) -->
-            <div class="type-card danger-high">
-                <div class="type-title">
-                    <i class="fas fa-fish" style="color:#b22234;"></i>
-                    <h3>Phishing & Vishing</h3>
-                </div>
-                <div class="danger-badge"><i class="fas fa-skull"></i> DANGER: HIGH (direct credential theft)</div>
-                <div class="how-occur">
-                    <i class="fas fa-question-circle"></i> <strong>How it occurs:</strong> Fake emails/SMS posing as bank, fake customer care calls asking for PIN/OTP, or fraudulent links that clone UPI login pages.
-                </div>
-                <div class="prevent-tip">
-                    <i class="fas fa-shield-check"></i> <span><strong>Safe:</strong> Never share OTP/PIN. Banks never ask for them. Hang up and call official number.</span>
-                </div>
-            </div>
-
-            <!-- 2. QR code tampering (medium-high) -->
-            <div class="type-card danger-high">
-                <div class="type-title">
-                    <i class="fas fa-qrcode" style="color:#b63e32;"></i>
-                    <h3>Fake / swapped QR codes</h3>
-                </div>
-                <div class="danger-badge"><i class="fas fa-skull"></i> DANGER: HIGH (widespread & silent)</div>
-                <div class="how-occur">
-                    <i class="fas fa-question-circle"></i> <strong>How it occurs:</strong> Fraudsters replace legitimate merchant QR stickers with their own. User scans and pays the fraudster.
-                </div>
-                <div class="prevent-tip">
-                    <i class="fas fa-shield-check"></i> <span><strong>Safe:</strong> Always verify receiver name before entering PIN. Use QR code only from trusted sources.</span>
-                </div>
-            </div>
-
-            <!-- 3. SIM swap (critical) -->
-            <div class="type-card danger-high">
-                <div class="type-title">
-                    <i class="fas fa-sim-card" style="color:#b22234;"></i>
-                    <h3>SIM swap attack</h3>
-                </div>
-                <div class="danger-badge"><i class="fas fa-skull"></i> DANGER: EXTREME (account takeover)</div>
-                <div class="how-occur">
-                    <i class="fas fa-question-circle"></i> <strong>How it occurs:</strong> Attacker gets a duplicate SIM through fraud, intercepts OTPs, and drains bank accounts.
-                </div>
-                <div class="prevent-tip">
-                    <i class="fas fa-shield-check"></i> <span><strong>Safe:</strong> If mobile network goes dead unexpectedly, contact operator immediately. Use SIM lock / biometric.</span>
-                </div>
-            </div>
-
-            <!-- 4. Malware / screen recording (high) -->
-            <div class="type-card danger-high">
-                <div class="type-title">
-                    <i class="fas fa-virus" style="color:#b63e32;"></i>
-                    <h3>Malware & screen readers</h3>
-                </div>
-                <div class="danger-badge"><i class="fas fa-skull"></i> DANGER: HIGH (invisible)</div>
-                <div class="how-occur">
-                    <i class="fas fa-question-circle"></i> <strong>How it occurs:</strong> Malicious apps (often fake “loan” or “utility” apps) gain accessibility access and capture UPI credentials.
-                </div>
-                <div class="prevent-tip">
-                    <i class="fas fa-shield-check"></i> <span><strong>Safe:</strong> Install apps only from Play Store/App Store. Deny accessibility permission to unknown apps.</span>
-                </div>
-            </div>
-
-            <!-- 5. AutoPay / e-mandate fraud (medium) -->
-            <div class="type-card danger-medium">
-                <div class="type-title">
-                    <i class="fas fa-clock" style="color:#d97747;"></i>
-                    <h3>AutoPay / e‑mandate abuse</h3>
-                </div>
-                <div class="danger-badge">DANGER: MEDIUM (recurring unnoticed)</div>
-                <div class="how-occur">
-                    <i class="fas fa-question-circle"></i> <strong>How it occurs:</strong> Fraudsters create recurring mandates via deceptive clicks; small amounts deducted monthly.
-                </div>
-                <div class="prevent-tip">
-                    <i class="fas fa-shield-check"></i> <span><strong>Safe:</strong> Regularly check active mandates in UPI app. Revoke any unknown.</span>
-                </div>
-            </div>
-
-            <!-- 6. Fake customer care (high) -->
-            <div class="type-card danger-high">
-                <div class="type-title">
-                    <i class="fas fa-headset" style="color:#b22234;"></i>
-                    <h3>Fake customer care</h3>
-                </div>
-                <div class="danger-badge">DANGER: HIGH (social engineering)</div>
-                <div class="how-occur">
-                    <i class="fas fa-question-circle"></i> <strong>How it occurs:</strong> Numbers listed on Google/Facebook for “customer support” – they ask for OTP to “reverse transaction”.
-                </div>
-                <div class="prevent-tip">
-                    <i class="fas fa-shield-check"></i> <span><strong>Safe:</strong> Always use official support numbers from app/website. No genuine support asks for OTP.</span>
-                </div>
-            </div>
-
-            <!-- 7. Juice jacking / public wifi (medium) -->
-            <div class="type-card danger-medium">
-                <div class="type-title">
-                    <i class="fas fa-wifi" style="color:#e6b422;"></i>
-                    <h3>Public WiFi / juice jacking</h3>
-                </div>
-                <div class="danger-badge">DANGER: MEDIUM (data interception)</div>
-                <div class="how-occur">
-                    <i class="fas fa-question-circle"></i> <strong>How it occurs:</strong> Unencrypted WiFi or compromised charging stations intercept UPI data during transmission.
-                </div>
-                <div class="prevent-tip">
-                    <i class="fas fa-shield-check"></i> <span><strong>Safe:</strong> Avoid transacting on public WiFi. Disable file transfer when charging at public kiosks.</span>
-                </div>
-            </div>
-
-            <!-- 8. OTP forwarding / fraud calls (high) -->
-            <div class="type-card danger-high">
-                <div class="type-title">
-                    <i class="fas fa-message" style="color:#b63e32;"></i>
-                    <h3>OTP forwarding scams</h3>
-                </div>
-                <div class="danger-badge">DANGER: HIGH (urgent deception)</div>
-                <div class="how-occur">
-                    <i class="fas fa-question-circle"></i> <strong>How it occurs:</strong> Fraudsters call claiming "your parcel is held" or "KYC expired" and trick you into forwarding an SMS (which contains OTP).
-                </div>
-                <div class="prevent-tip">
-                    <i class="fas fa-shield-check"></i> <span><strong>Safe:</strong> Never forward OTPs or SMS to anyone. Banks never ask for forwarded messages.</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- summary safety mantra -->
-        <div style="margin-top: 2rem; background: #ffffffdb; padding: 1.5rem 2rem; border-radius: 50px; text-align: center; border: 1px solid #acc9e5;">
-            <i class="fas fa-hexagon-exclamation" style="color:#b63e32; margin-right: 12px;"></i>
-            <span style="font-weight: 500;">Golden rule: </span> 
-            <strong>STOP · THINK · VERIFY</strong> — UPI frauds rely on urgency and secrecy. No exception.
-        </div>
-    </div>
-    <!-- END non-fraud case with education -->
-    {% endif %}
-
-    <!-- subtle footer (optional) -->
+    <!-- subtle footer -->
     <div style="padding: 1rem 2.5rem 1.5rem; border-top: 1px solid #d6e3f0; display: flex; justify-content: space-between; color:#4f6b85; font-size:0.85rem;">
-        <span><i class="far fa-clock"></i> analysis timestamp: {{ timestamp|default:"2025-03-15 14:32" }}</span>
-        <span><i class="fas fa-fingerprint"></i> ref: UPI-{{ prediction|default:"N" }}-{{ random_id|default:"8a3f" }}</span>
+        <span><i class="far fa-clock"></i> analysis timestamp: {{ timestamp }}</span>
+        <span><i class="fas fa-fingerprint"></i> ref: UPI-{{ prediction|default:"N" }}-{{ reference_id }}</span>
     </div>
 </div>
 </body>

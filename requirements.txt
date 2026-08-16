@@ -51,3 +51,17 @@ redis==8.1.0
 
 # --- Phase 2 training (ml/src/train.py): cold/warm LightGBM models ---
 lightgbm==4.7.0
+
+# --- Phase 3 policy (ml/src/policy/reason_codes.py): SHAP explanations ---
+# shap's own metadata declares numpy>=2, which conflicts with numpy==1.23.4
+# pinned above for pandas 1.5.1 compatibility (pandas 1.5.1's compiled
+# extensions are ABI-incompatible with numpy 2.x and crash on import).
+# Verified working in practice: shap 0.51.0 runs fine against numpy 1.23.4
+# at runtime; the >=2 constraint is not enforced by pip (already-installed
+# numpy isn't downgraded by installing shap alone) and no numpy-2-only API
+# is exercised by TreeExplainer's LightGBM path. Do not let pip "fix" this by
+# upgrading numpy. Separately (unrelated to shap): `import lightgbm` must
+# happen before `import pandas` in any process that also touches LightGBM's
+# C API, or it crashes with an access violation -- see the comment in
+# reason_codes.py.
+shap==0.51.0

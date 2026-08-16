@@ -1,0 +1,18 @@
+{
+  "cold": {
+    "t_warn": 0.01,
+    "t_review": 0.58075,
+    "t_block": 0.96,
+    "expected_cost": -20088.690000000002,
+    "n_events": 224
+  },
+  "warm": {
+    "t_warn": 0.01,
+    "t_review": 0.035,
+    "t_block": 0.96,
+    "expected_cost": -1250788.41,
+    "n_events": 52476
+  },
+  "max_review_block_rate": 0.02,
+  "cold_strictness_multiplier_applied": true
+}

@@ -30,6 +30,9 @@ jobs:
           SECRET_KEY: ci-only-secret-key
         run: python manage.py test users
 
+      - name: Generate synthetic data
+        run: python -m ml.src.generator.cli --days 90 --payers 5000 --seed 42 --out data/synthetic/
+
       - name: Run generator tests
         run: pytest ml/tests
 
