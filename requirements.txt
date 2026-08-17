@@ -26,9 +26,14 @@ gunicorn==21.2.0
 whitenoise==6.6.0
 
 # --- ML / fraud-prediction inference ---
-# Required at runtime: the Django app unpickles a scikit-learn model via
-# joblib, so scikit-learn must be installed even though the view code never
-# imports it directly.
+# Required by ml/src/train.py, service/scoring.py, and worker/consumer.py
+# (LightGBM training/serving, isotonic calibration). All four docker-compose
+# services (ui, api, worker, generator) share this one requirements.txt/image
+# (see Dockerfile), but the Django `ui` process itself never imports these
+# directly -- it's an HTTP client of the FastAPI scoring service (Phase 4),
+# not a model host. Corrected 2026-08-17 (Phase 7): this comment previously
+# claimed Django unpickles a model via joblib, which is stale/inaccurate for
+# the current v2 architecture.
 numpy==1.23.4
 pandas==1.5.1
 scikit-learn==1.1.3

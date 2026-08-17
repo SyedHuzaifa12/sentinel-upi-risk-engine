@@ -108,6 +108,34 @@ def test_reason_codes_ordered_by_absolute_shap_descending():
         assert isinstance(c["message"], str) and len(c["message"]) > 0
 
 
+def test_reason_code_messages_never_contain_the_literal_nan():
+    """Regression test: a NaN-valued base feature (insufficient history --
+    e.g. a payer's first-ever payment to a payee) can still be the top SHAP
+    contributor, but its message must read as an explicit "could not be
+    computed" statement, never the literal string "nan" from an f-string
+    formatting a float NaN directly (e.g. "nan days since this payer last
+    paid this payee")."""
+    feature_vector = {name: 0.0 for name in TEMPLATES}
+    feature_vector["amount_roundness"] = "neither"
+    # Every _is_missing-eligible base feature set to NaN, as it would be for
+    # a payer's genuinely first-ever payment to a brand-new payee.
+    for name in (
+        "amount_zscore_vs_payer_30d", "amount_ratio_to_payer_median",
+        "seconds_since_payer_last_txn", "hour_deviation_from_payer_normal",
+        "payer_new_payee_rate_30d", "payer_collect_request_rate_30d",
+        "days_since_payer_last_paid_payee",
+    ):
+        if name in feature_vector:
+            feature_vector[name] = float("nan")
+
+    for is_cold in (True, False):
+        codes = compute_reason_codes(feature_vector, is_cold=is_cold)
+        for c in codes:
+            assert "nan" not in c["message"].lower(), (
+                f"reason code message leaked a literal NaN: {c['message']!r}"
+            )
+
+
 # -- headline cost result ------------------------------------------------------
 
 def test_expected_cost_at_chosen_threshold_beats_naive_cutoff(thresholds, val_data):

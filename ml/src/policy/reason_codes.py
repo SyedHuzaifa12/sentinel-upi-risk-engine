@@ -10,6 +10,7 @@ touched (verified directly by bisecting the import order -- reproducible
 regardless of whether `shap` is involved at all). `import lightgbm` must be
 the first import in this module, before `pandas`.
 """
+import math
 import sys
 import time
 from pathlib import Path
@@ -148,7 +149,17 @@ def compute_reason_codes(feature_vector: dict, is_cold: bool, top_n: int = 5) ->
     codes = []
     for name, contrib in positive[:top_n]:
         value = feature_vector.get(name)
-        message = TEMPLATES[name](value)
+        # A base feature can be NaN (insufficient history to compute it) yet
+        # still be the top SHAP contributor -- LightGBM routes NaN through a
+        # learned split, so it's a real, rankable signal, not noise. Its own
+        # template (e.g. "{v:.0f} days since...") would render the literal
+        # string "nan" in that case; fall back to the same "could not be
+        # reliably computed" wording its _is_missing companion already uses,
+        # rather than ever putting "nan" in front of an analyst.
+        if isinstance(value, float) and math.isnan(value):
+            message = _missing_template(name)(value)
+        else:
+            message = TEMPLATES[name](value)
         codes.append({
             "code": name,
             "message": message,
