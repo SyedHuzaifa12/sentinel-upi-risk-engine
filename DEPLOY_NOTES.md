@@ -163,7 +163,58 @@ against 5.2.17, one version-major ahead of what will actually deploy.
 Django 4.1 already has `get_asgi_application()` and the
 `CSRF_TRUSTED_ORIGINS` wildcard syntax used in `settings.py`, so this
 shouldn't matter, but it's a real, unverified-on-4.1.2 gap worth knowing
-about rather than silently assuming away.
+about rather than silently assuming away. **Since resolved**: installed the
+actual pinned `Django==4.1.2` locally and re-ran every check above against
+it directly — identical results to 5.2.17 (see the incident log in
+PROGRESS.md's Phase 8 section for the exact commands). No longer a gap.
+
+## Incident: first real deploy attempt failed — `libgomp.so.1` missing
+
+**What happened**: migrations applied cleanly against Neon (31/31), the
+image built successfully, but `render_seed.py` crashed at container start
+with `OSError: libgomp.so.1: cannot open shared object file` at `import
+lightgbm`.
+
+**Root cause**: LightGBM's compiled extension dynamically links
+`libgomp.so.1` (OpenMP) at import time — it does not vendor this inside its
+own wheel, unlike numpy/scipy/pandas, which bundle their own
+OpenBLAS/runtime libs and need nothing extra. `python:3.11-slim` doesn't
+ship `libgomp1`. The plain `Dockerfile` (docker-compose target) never hit
+this because it never strips `build-essential` out of its single stage —
+installing `gcc` pulls in `libgomp1` as an *incidental* transitive
+dependency, silently masking the real runtime requirement the whole time.
+`Dockerfile.render`'s multi-stage build correctly stripped that accidental
+dependency along with the genuine build tools — which is exactly why this
+gap became visible instead of staying hidden forever.
+
+**Fix**: added `libgomp1` to the FINAL stage's `apt-get install` line (not
+the builder stage — it needs to exist at runtime, not build time).
+**Audited, not assumed**, whether anything else needed a similar add:
+scikit-learn's and shap's compiled extensions can also use OpenMP in some
+builds, but that's the *same* `libgomp.so.1`, already covered by this one
+package. `psycopg2-binary`/`psycopg[binary]` vendor `libpq` inside their own
+wheels (that's what "binary" means). `cryptography`'s OpenSSL need is
+already satisfied by `python:3.11-slim`'s own base packages — proven by the
+plain `Dockerfile` using the identical base image successfully today.
+
+**Also hardened**: `render_seed.py`'s `if __name__ == "__main__":` block now
+wraps `main()` in a try/except that prints one unambiguous `render_seed:
+FATAL -- ...` line before the traceback, and `main()`'s body uses
+try/finally so the Neon connection is released even on a mid-loop failure.
+This does **not** and cannot catch an import-time crash like the libgomp
+one (the failing `import lightgbm` line runs before this block exists at
+all) — that class of failure has exactly one real fix, which is not letting
+the import fail in the first place (the apt package above). What this
+hardening actually buys: a readable single-line failure for any *runtime*
+seeding failure (a dropped Neon connection, a scoring error), verified
+directly with a deliberately-broken `DATABASE_URL` locally — clean FATAL
+message, then the traceback, real process exit code 1, `set -e` in
+`render_entrypoint.sh` already stops the script before ever reaching `exec
+uvicorn`. The "ran three times" in the failed deploy's logs was Render's own
+container-restart-on-crash-loop policy (platform-level, not something this
+repo's scripts control) retrying a *deterministic* failure — it stops
+recurring on its own once the underlying crash is actually fixed, which is
+what the apt package does.
 
 ---
 

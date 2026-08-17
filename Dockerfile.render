@@ -37,8 +37,25 @@ WORKDIR /app
 # RUNTIME shared libraries only (no "-dev" headers, no compiler) -- Pillow
 # and zlib-linked wheels still need these .so files present to import, even
 # though nothing in this stage ever compiles anything.
+#
+# libgomp1 (2026-08-18, found via a failed Render build): LightGBM's compiled
+# extension dynamically links libgomp.so.1 (OpenMP) at import time -- it does
+# NOT vendor this inside its wheel, unlike numpy/scipy/pandas, which bundle
+# their own OpenBLAS/runtime libs and need nothing extra here. The plain
+# Dockerfile (docker-compose target) never hit this because it never strips
+# build-essential out of its single stage -- installing gcc pulls in libgomp1
+# as an incidental transitive dependency, silently masking the real runtime
+# requirement. This multi-stage build correctly strips that accidental
+# dependency, which is exactly why the gap became visible instead of staying
+# hidden. Audited (not assumed) whether anything else needs a similar add:
+# scikit-learn's and shap's compiled extensions can also use OpenMP in some
+# builds, but that's the SAME libgomp.so.1, already covered here, not a
+# second package. psycopg2-binary/psycopg[binary] vendor libpq inside their
+# own wheels (that's what "binary" means). cryptography's OpenSSL need is
+# already satisfied by python:3.11-slim's own base packages -- proven by the
+# plain Dockerfile using the identical base image successfully today.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends libjpeg62-turbo zlib1g \
+    && apt-get install -y --no-install-recommends libjpeg62-turbo zlib1g libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /install /usr/local

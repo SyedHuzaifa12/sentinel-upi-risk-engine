@@ -280,3 +280,17 @@ at that volume:
   zero-dependency default for training/local dev, not a serving-path option;
   only `PostgresHistoryStore`/`RedisHistoryStore` (both already the ones
   actually used by `service/`/`worker/`) scale past a single process's memory.
+
+## Architecture decisions (why this, not that)
+
+Nine specific technology/design choices, each with the actual reasoning
+behind it -- Redis Streams vs. Kafka, hand-rolled feature store vs. Feast,
+two models vs. one, cold threshold=3, isotonic vs. Platt calibration, the
+greedy sequential threshold sweep vs. a joint grid search, plain
+`pipelines/` + a Makefile vs. Airflow/Prefect, Django kept as an analyst
+console vs. rewritten in React, and LightGBM vs. a neural network -- are
+written up in full in
+[docs/INTERVIEW_NOTES.md](INTERVIEW_NOTES.md#3-why-this-not-that) ("Why
+this, not that"). Kept there rather than duplicated here since that page is
+the one meant to be read start to finish; this file is the one meant to be
+grepped for a specific decision.

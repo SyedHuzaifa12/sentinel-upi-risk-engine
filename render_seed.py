@@ -54,73 +54,95 @@ def main():
         return
 
     log = DecisionLog(config.DATABASE_URL)  # __init__ calls decisionlog.schema.ensure_schema()
-    existing = log._conn.execute("SELECT count(*) FROM decisions").fetchone()[0]
-    if existing >= SEED_MIN_ROWS:
-        print(f"render_seed: {existing} decisions already present (>= {SEED_MIN_ROWS}) -- skipping seed.")
+    try:
+        existing = log._conn.execute("SELECT count(*) FROM decisions").fetchone()[0]
+        if existing >= SEED_MIN_ROWS:
+            print(f"render_seed: {existing} decisions already present (>= {SEED_MIN_ROWS}) -- skipping seed.")
+            return
+
+        t_start = time.perf_counter()
+        print(f"render_seed: {existing} existing rows -- seeding from scratch "
+              f"(target: generate {N_GENERATE}, score up to {N_SCORE}, budget {WALL_CLOCK_BUDGET_S}s).")
+
+        registry = scoring.load_models()
+        print(f"render_seed: models loaded (cold={registry['cold_model']['model_version']}, "
+              f"warm={registry['warm_model']['model_version']}).")
+
+        events, summary = generate(days=15, n_payers=200, n_payees=100, seed=42, fraud_rate=0.02)
+        events = events[:N_GENERATE]
+        print(f"render_seed: generated {len(events)} synthetic events "
+              f"({summary['fraud_event_count']} fraud, seed=42, deterministic).")
+
+        store = InMemoryHistoryStore()
+        for event in events[:N_WARM_UP]:
+            store.record(event)
+        print(f"render_seed: warmed history with {N_WARM_UP} unscored events "
+              f"(so scored events see realistic prior history, not a cold start).")
+
+        n_scored = 0
+        action_counts = {}
+        for event in events[N_WARM_UP:N_WARM_UP + N_SCORE]:
+            if time.perf_counter() - t_start > WALL_CLOCK_BUDGET_S:
+                print(f"render_seed: hit the {WALL_CLOCK_BUDGET_S}s budget after {n_scored} scored -- "
+                      f"stopping early (a partial seed; below {SEED_MIN_ROWS} rows still re-attempts "
+                      f"seeding on the next restart).")
+                break
+
+            result = scoring.score_event(event, store)
+            action_counts[result.action] = action_counts.get(result.action, 0) + 1
+            log.record(
+                txn_id=result.txn_id,
+                event={
+                    "payer_vpa": event.payer_vpa, "payee_vpa": event.payee_vpa, "amount": event.amount,
+                    "label_is_fraud": event.label_is_fraud, "label_typology": event.label_typology,
+                },
+                feature_snapshot=result.feature_snapshot,
+                risk_score=result.risk_score,
+                raw_score=result.raw_score,
+                is_cold=result.is_cold,
+                action=result.action,
+                risk_tier=result.risk_tier,
+                reason_codes=result.reason_codes,
+                model_version=result.model_version,
+                thresholds_version=result.thresholds_version,
+                latency_ms=result.latency_ms,
+                # `datetime.now()`, not the synthetic event's own ~Jan-2026
+                # timestamp -- matches worker/consumer.py's convention and makes
+                # the monitoring dashboard's "alert rate over time" show today's
+                # date, not a stale-looking seed date, for anyone opening the
+                # demo link months after this container first started.
+                scored_at=datetime.now(timezone.utc),
+                source="replay",
+            )
+            n_scored += 1
+
+        elapsed = time.perf_counter() - t_start
+        print(f"render_seed: done. Scored {n_scored} events in {elapsed:.1f}s (incl. model load). "
+              f"Action mix: {action_counts}")
+    finally:
+        # try/finally, not just a trailing log.close() -- a mid-loop failure
+        # (a bad event, a dropped Neon connection) must still release the
+        # connection on the way out, not leak it while the process exits.
         log.close()
-        return
-
-    t_start = time.perf_counter()
-    print(f"render_seed: {existing} existing rows -- seeding from scratch "
-          f"(target: generate {N_GENERATE}, score up to {N_SCORE}, budget {WALL_CLOCK_BUDGET_S}s).")
-
-    registry = scoring.load_models()
-    print(f"render_seed: models loaded (cold={registry['cold_model']['model_version']}, "
-          f"warm={registry['warm_model']['model_version']}).")
-
-    events, summary = generate(days=15, n_payers=200, n_payees=100, seed=42, fraud_rate=0.02)
-    events = events[:N_GENERATE]
-    print(f"render_seed: generated {len(events)} synthetic events "
-          f"({summary['fraud_event_count']} fraud, seed=42, deterministic).")
-
-    store = InMemoryHistoryStore()
-    for event in events[:N_WARM_UP]:
-        store.record(event)
-    print(f"render_seed: warmed history with {N_WARM_UP} unscored events "
-          f"(so scored events see realistic prior history, not a cold start).")
-
-    n_scored = 0
-    action_counts = {}
-    for event in events[N_WARM_UP:N_WARM_UP + N_SCORE]:
-        if time.perf_counter() - t_start > WALL_CLOCK_BUDGET_S:
-            print(f"render_seed: hit the {WALL_CLOCK_BUDGET_S}s budget after {n_scored} scored -- "
-                  f"stopping early (a partial seed; below {SEED_MIN_ROWS} rows still re-attempts "
-                  f"seeding on the next restart).")
-            break
-
-        result = scoring.score_event(event, store)
-        action_counts[result.action] = action_counts.get(result.action, 0) + 1
-        log.record(
-            txn_id=result.txn_id,
-            event={
-                "payer_vpa": event.payer_vpa, "payee_vpa": event.payee_vpa, "amount": event.amount,
-                "label_is_fraud": event.label_is_fraud, "label_typology": event.label_typology,
-            },
-            feature_snapshot=result.feature_snapshot,
-            risk_score=result.risk_score,
-            raw_score=result.raw_score,
-            is_cold=result.is_cold,
-            action=result.action,
-            risk_tier=result.risk_tier,
-            reason_codes=result.reason_codes,
-            model_version=result.model_version,
-            thresholds_version=result.thresholds_version,
-            latency_ms=result.latency_ms,
-            # `datetime.now()`, not the synthetic event's own ~Jan-2026
-            # timestamp -- matches worker/consumer.py's convention and makes
-            # the monitoring dashboard's "alert rate over time" show today's
-            # date, not a stale-looking seed date, for anyone opening the
-            # demo link months after this container first started.
-            scored_at=datetime.now(timezone.utc),
-            source="replay",
-        )
-        n_scored += 1
-
-    elapsed = time.perf_counter() - t_start
-    print(f"render_seed: done. Scored {n_scored} events in {elapsed:.1f}s (incl. model load). "
-          f"Action mix: {action_counts}")
-    log.close()
 
 
 if __name__ == "__main__":
-    main()
+    # Fail fast, don't retry: this process is a one-shot startup step, not a
+    # daemon, and this repo has exactly one failure mode worth distinguishing
+    # -- render_entrypoint.sh's `set -e` already stops it from proceeding to
+    # `exec uvicorn` after ANY non-zero exit here, so there is no internal
+    # retry loop to remove. What this DOES add: a single, unambiguous FATAL
+    # line before the traceback, so a crash-looping container (Render
+    # restarting the whole container after a crash, not this script retrying
+    # itself) produces a readable log instead of a bare traceback repeated
+    # per restart. Note: this can only catch RUNTIME failures (a bad Neon
+    # connection, a scoring error) -- an IMPORT-time crash (e.g. the
+    # 2026-08-18 missing-libgomp1 incident, which failed on `import lightgbm`
+    # above, before this block ever runs) can't be caught here at all; the
+    # only real fix for that class is not letting the import fail in the
+    # first place (see Dockerfile.render's libgomp1 comment).
+    try:
+        main()
+    except Exception as exc:
+        print(f"render_seed: FATAL -- seeding failed, exiting immediately, no retry: {exc}", file=sys.stderr)
+        raise
