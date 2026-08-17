@@ -1,147 +1,225 @@
-# Render deployment readiness notes
+# Render deployment notes
 
-Investigation only — **no code changes made for this**. Written ahead of a
-planned slimmed single-container deploy to Render's free tier (512MB RAM,
-0.1 CPU).
+Two deploy targets now exist. **docker-compose.yml / Dockerfile** (postgres,
+redis, api, worker, ui, generator) is untouched and remains the primary
+local-dev target. **Dockerfile.render / render.yaml / render_app.py /
+render_seed.py** are an ADDED second target: a single-process, single-
+container deploy to Render's free tier (512MB RAM, 0.1 CPU, sleeps after
+15 min idle, 750 instance-hours/month, 500 build minutes, no card). Nothing
+in the first target was deleted or modified to build the second.
 
-## 1. decisionlog on SQLite
+## Architecture: one process, two apps
 
-**Not viable as-is — and the blocker is deeper than the trigger SQL.**
-
-`decisionlog/writer.py` hardcodes `import psycopg` (psycopg3) and connects
-via `psycopg.connect(dsn, autocommit=True)`. psycopg speaks the Postgres
-wire protocol only — it cannot open a SQLite file at all, regardless of
-schema. So this isn't "the append-only guarantee silently stops working on
-SQLite," it's "the process crashes on `DecisionLog.__init__` before it ever
-gets that far."
-
-Separately, `decisionlog/schema.py`'s append-only enforcement is also
-Postgres-specific SQL:
-
-```sql
-CREATE OR REPLACE FUNCTION decisions_prevent_mutation() RETURNS TRIGGER AS $$
-BEGIN
-    RAISE EXCEPTION 'decisions is append-only: % is not allowed', TG_OP;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE TRIGGER decisions_no_update
-BEFORE UPDATE ON decisions
-FOR EACH ROW EXECUTE FUNCTION decisions_prevent_mutation();
-```
-
-`LANGUAGE plpgsql` and `CREATE OR REPLACE TRIGGER ... EXECUTE FUNCTION`
-don't exist in SQLite. SQLite *does* have triggers, just a different
-dialect — the equivalent would be:
-
-```sql
-CREATE TRIGGER decisions_no_update BEFORE UPDATE ON decisions
-BEGIN SELECT RAISE(ABORT, 'decisions is append-only: UPDATE is not allowed'); END;
-```
-
-**What an app-level guard would actually need**, if SQLite is the real
-target: a parallel `DecisionLog` implementation using Python's stdlib
-`sqlite3` (not psycopg) plus a SQLite-dialect `schema.py` (the `RAISE(ABORT,
-...)` form above) — a genuine, if small, second backend, not a config flag.
-`decisionlog/tests` would also need a SQLite variant of every test, since
-the current suite skips entirely without `TEST_DATABASE_URL` pointed at a
-real Postgres.
-
-**Recommendation:** don't build that second backend. Render offers a free
-Postgres tier — use it, and keep `decisionlog` exactly as it is. The
-SQLite path is real work for no benefit here; the whole point of
-`decisionlog` is DB-enforced immutability, which is easiest to keep exactly
-where it's already proven correct.
-
-## 2. FastAPI mounted inside Django's process
-
-**Not a hard blocker — Django can run as ASGI, no new code needed there.**
-
-`backend/config/asgi.py` already exists (stock
-`django.core.asgi.get_asgi_application()`) — Django doesn't need to be
-rewritten to speak ASGI, it already can. The composition path is: keep
-Django as WSGI (simpler, nothing about its own code needs `async def`),
-wrap it in `starlette.middleware.wsgi.WSGIMiddleware` (confirmed importable
-in this venv, `starlette==0.41.3` — FastAPI depends on Starlette already,
-so this is not a new dependency), and mount both apps under one Starlette
-router, served by one `uvicorn`:
+`render_app.py` composes Django (WSGI) and the FastAPI scoring service
+(ASGI) into one Starlette app, served by one `uvicorn` process:
 
 ```python
-from starlette.applications import Starlette
-from starlette.middleware.wsgi import WSGIMiddleware
-from starlette.routing import Mount
-
-from backend.config.wsgi import application as django_wsgi_app
-from service.main import app as fastapi_app
-
-app = Starlette(routes=[
-    Mount("/api", app=fastapi_app),
-    Mount("/", app=WSGIMiddleware(django_wsgi_app)),
-])
+app = Starlette(
+    routes=[
+        Mount("/api", app=fastapi_app),        # same app as `uvicorn service.main:app`
+        Mount("/", app=WSGIMiddleware(django_wsgi_app)),
+    ],
+    lifespan=combined_lifespan,
+)
 ```
 
-**Real open question, not yet verified**: whether Starlette's `Mount`
-propagates ASGI `lifespan` events down into the mounted FastAPI sub-app.
-`service/scoring.load_models()` runs during FastAPI's own `lifespan` context
-today (`service/main.py`) — if `Mount` doesn't forward `lifespan.startup` to
-the sub-app, `load_models()` would never run and every `/api/v1/score` call
-would 500. This needs a direct test (start the combined app, hit `/api/v1/
-score` once) before treating the composition as done, not just assumed
-from Starlette's docs.
+**The one previously-unverified risk was checked and fixed before writing
+any of this**: Starlette's `Mount()` does **not** forward ASGI lifespan
+startup/shutdown into a mounted sub-app (confirmed empirically with a
+minimal repro — a FastAPI sub-app's own `lifespan=` context manager never
+ran when mounted this way; `scoring.load_models()` would never have
+executed, and every `/api/v1/score` call would have 500'd with "load_models()
+must run before score_event()"). The fix: `render_app.py`'s own
+`combined_lifespan` explicitly delegates to `service.main`'s **existing**
+`lifespan(app)` function, called against the mounted `fastapi_app` instance
+— zero duplicated startup logic, and confirmed working end-to-end with a
+`TestClient` smoke test: `GET /api/v1/health`, `GET /api/v1/model-info`,
+`GET /api/docs`, `GET /login/`, and `GET /` (the landing page) all return
+200 with real data, models loaded, against the combined app.
 
-Also not yet checked: whether `worker/consumer.py`'s Streams consumer loop
-can run inside the same single process (as a background `asyncio.create_task`
-at FastAPI startup) or needs to stay a separate process — Render's free tier
-is typically one web service, no separate background worker dyno, so this
-matters for whether replay/live scoring works at all on that tier, not just
-for the API path.
+Also confirmed: `request.app` inside a route handler mounted this way
+correctly resolves to the sub-app itself (not the parent), so
+`service/routes.py`'s existing `request.app.state.store` /
+`.decision_log` / `.model_info` reads work completely unchanged.
 
-## 3. Estimated single-process RSS
+**Worker placement**: `worker/consumer.py`'s Redis Streams consumer is
+**not** part of this deploy target at all — `STORE_BACKEND=memory` (no
+Redis), and nothing in `render_app.py`'s or `render_seed.py`'s import chain
+touches `worker/` or `redis` (checked directly: `service/deps.py`'s
+`build_store()` only imports `redis_store` inside the `if backend ==
+"redis":` branch, never reached when `STORE_BACKEND=memory`). Live-feeling
+traffic comes from `render_seed.py` at startup and the monitoring
+dashboard's "Replay N events" button at runtime instead — both score
+events **in-process**, directly, no stream/queue involved.
 
-Live-measured just now (`docker stats`, this repo's current containers, not
-the user-supplied figures from the original ask — those were slightly
-stale):
+## Sandbox scoring: unchanged code, just a loopback URL
 
-| Container | MEM USAGE |
-|---|---|
-| api | 206.8 MiB |
-| ui | 144.1 MiB |
-| worker | 201.5 MiB |
+`backend/users/services/prediction_service.py` already calls
+`settings.RISK_API_URL` + `/v1/score` over HTTP (Phase 4's design — Django
+is a client of the scoring service, not a model host). On Render, the
+entrypoint script sets `RISK_API_URL=http://127.0.0.1:$PORT/api` at
+container start (computed then, not at build time, since `$PORT` is only
+known once Render assigns it) — so the sandbox form just calls itself over
+loopback at the `/api` mount point. **Zero changes needed** to
+`prediction_service.py` or `views/prediction.py`.
 
-**Correction to the "duplicated numpy/pandas" assumption**: grepped
-`backend/` for direct imports — `ui`'s Django process imports `numpy` only
-(for ULID generation in `views/prediction.py`), and imports **none** of
-pandas/lightgbm/scikit-learn/shap directly. It's an HTTP client of the
-FastAPI service (Phase 4 decision), not a model host. So `ui`'s ~144MB is
-Django + its own dependency stack (psycopg2, social-auth, whitenoise,
-cryptography, dj-database-url) — **not** a second copy of the ML libraries.
-`api`'s ~207MB carries essentially all of that weight already (numpy,
-pandas, scikit-learn, lightgbm, shap, fastapi, uvicorn).
+## decisionlog: Neon, not Render's free Postgres, not SQLite
 
-Merging the two into one process would **not** deduplicate an ML-library
-copy that doesn't currently exist twice. The real savings are one Python
-interpreter instead of two, and one supervisor process (gunicorn+uvicorn)
-instead of two — realistically **~30-50MB**, not "half of 207MB."
+`decisionlog/writer.py` hardcodes `import psycopg` (psycopg3, Postgres wire
+protocol only) — it cannot open a SQLite file at all, and
+`decisionlog/schema.py`'s append-only trigger is Postgres-specific
+`plpgsql` besides. **Not fixed, deliberately**: building a second
+SQLite-backed `DecisionLog` + schema is real, avoidable work; the whole
+point of `decisionlog` is DB-enforced immutability, easiest to keep exactly
+where it's already proven correct.
 
-**Rough combined estimate: ~260-320MB** (api's ~207MB is essentially fixed;
-ui's Django-specific overhead after subtracting a redundant Python
-interpreter base is maybe ~90-110MB on top). That leaves roughly
-**190-250MB of headroom under Render's 512MB ceiling** — measured
-containers, reasoned combination, not a load test.
+**Do not use Render's own free Postgres tier — it expires 30 days after
+creation** and would permanently break the demo link. Use
+[Neon](https://neon.tech) (permanent free tier) instead; Django and
+`decisionlog` both connect to the same Neon database via one
+`DATABASE_URL`. Neon's dashboard-provided connection strings already
+include `?sslmode=require`; use it as-is, no code change needed (psycopg3
+and psycopg2 both honor the `sslmode` query parameter natively).
 
-**The tighter constraint is very likely CPU, not RAM.** Render's free tier
-gives 0.1 vCPU (10% of one core). SHAP's `TreeExplainer` is the dominant
-per-request cost measured in this project (Phase 3: p99≈20.9ms for
-`compute_reason_codes` alone, out of a ~27ms total p99 budget on *dedicated*
-local hardware). Under a 10%-of-one-core throttle, that same computation
-could take an order of magnitude longer under any concurrent load — this
-is a real risk to validate with an actual load test on Render before
-trusting the RAM estimate as the binding constraint.
+## Startup seeding: real, unverified timing risk
 
-## Summary
+`render_seed.py` runs once per container start (idempotent — skips if
+`decisions` already has >= 250 rows). **Reduced from an original
+2000-generated/600-scored design** (2026-08-17): 0.1 CPU makes scoring the
+slow part, and a startup timeout fails the whole deploy, not just the seed
+— 300 decisions is already plenty to populate the monitoring dashboard and
+review queue. Measured **locally, full CPU, no network**: `load_models()`
+~4.6s, generating 1000 events ~0.4s, scoring 300 of them (SHAP included)
+~4.5s — about 9.5s end to end. **This may still be slower on Render**:
+0.1 vCPU is a tenth of what this was measured on, and each of the 300
+`decisionlog.record()` calls is a real network round-trip to Neon that this
+local measurement doesn't include at all.
 
-| Question | Verdict |
-|---|---|
-| decisionlog on SQLite | Blocked at the connection layer (psycopg-only), not just the trigger SQL. Use Render's free Postgres instead of building a second backend. |
-| FastAPI + Django, one process | Not blocked — Django already has `asgi.py`; compose via `WSGIMiddleware` + Starlette `Mount`. Verify `lifespan` propagation and worker placement before relying on it. |
-| Single-process RAM | ~260-320MB estimated, real headroom under 512MB — but CPU (0.1 vCPU) is the more likely actual constraint given SHAP's measured cost, not RAM. |
+Two safety valves, not just optimism:
+1. A hard wall-clock cutoff (`RENDER_SEED_BUDGET_S`, default 45s) stops
+   scoring early rather than risk blowing the whole startup budget — a
+   partial seed (fewer than 250 rows) just re-attempts seeding on the next
+   restart, nothing is lost.
+2. `RENDER_SEED_N_SCORE` / `RENDER_SEED_N_GENERATE` env vars let this be
+   tuned down further after watching the first deploy's actual logs,
+   without a code change.
+
+**Watch the first deploy's logs for `render_seed:` lines** — if it hits the
+45s budget consistently, lower `RENDER_SEED_N_SCORE` to 100-150 in the
+Render dashboard and redeploy (no rebuild needed, just a restart, since
+it's an env var).
+
+## SHAP: lazy-loaded, not eagerly loaded at import time
+
+`ml/src/policy/reason_codes.py`'s `shap.TreeExplainer` construction (real,
+measurable startup cost) is now built on first actual use, not at module
+import time — reverses a Phase 3 decision, made explicitly for this deploy
+target's slow-CPU startup constraint (see that module's own comment for the
+full reasoning). Cold model + warm model themselves are still loaded
+eagerly (cheap `joblib.load`, not the slow part). This is a shared-code
+change, not Render-specific — it benefits the docker-compose target's
+`api`/`worker` cold-start time too, with no behavior change once the
+explainer is actually needed.
+
+## Monitoring dashboard: "Replay N events" button
+
+`backend/users/views/monitoring.py`'s `replay_events` view scores 100 fresh
+synthetic events in-process against the shared store/decision log already
+loaded by `render_app.py`'s combined lifespan — reached via
+`service.main.app.state`, the same singleton object `render_app.py`
+mounted. **Gracefully degrades** on the docker-compose target (where
+`service.main.app`'s lifespan never ran in the `ui` container's own
+process): the button renders disabled with a clear "not available in this
+deployment" message rather than a 500 — checked via `hasattr(state,
+"store")`, not assumed. Each click uses a small (15 payers / 8 payees) pool
+so payees recur *within* the 100-event batch, giving realistic warm-model
+routing without needing to persist a separate identity pool across clicks;
+seeded from the current timestamp so repeated clicks show different
+transactions (a deliberate exception to this project's usual
+"always a fixed seed" rule — a live demo button is a different use case
+than training/backtesting reproducibility).
+
+## Single-process RSS (unchanged finding, still holds)
+
+Live-measured (`docker stats`, the docker-compose target's containers):
+api 206.8 MiB, ui 144.1 MiB, worker 201.5 MiB. `ui`'s Django process
+imports **only** `numpy` directly (for ULID generation) — none of
+pandas/lightgbm/scikit-learn/shap. So merging processes does not
+deduplicate an ML-library copy that doesn't currently exist twice; the real
+saving is one Python interpreter instead of two. **Estimated combined RSS:
+~260-320MB** — real headroom under 512MB, but **CPU (0.1 vCPU) is the more
+likely actual constraint**, not RAM, given SHAP's measured ~20.9ms p99 cost
+per non-ALLOW decision on dedicated local hardware (see the seeding timing
+risk above for the concrete version of this concern).
+
+## One pre-existing, unrelated environment finding
+
+`requirements.txt` pins `Django==4.1.2`; this dev machine's `.venv` has
+`Django==5.2.17` installed (drifted independently at some point, not
+something this session changed). `Dockerfile.render` builds from
+`requirements.txt` fresh, so the actual Render deploy gets 4.1.2, not
+whatever's in this local venv — the `TestClient` verification above ran
+against 5.2.17, one version-major ahead of what will actually deploy.
+Django 4.1 already has `get_asgi_application()` and the
+`CSRF_TRUSTED_ORIGINS` wildcard syntax used in `settings.py`, so this
+shouldn't matter, but it's a real, unverified-on-4.1.2 gap worth knowing
+about rather than silently assuming away.
+
+---
+
+## Click-by-click Render setup
+
+### 1. Neon database
+1. Sign up at [neon.tech](https://neon.tech), create a project (any region
+   close to Render's — Render's free tier runs in Oregon, US-West, by
+   default).
+2. From the Neon dashboard, copy the connection string (it looks like
+   `postgresql://<user>:<password>@<host>/<db>?sslmode=require`). Keep it —
+   this is `DATABASE_URL`.
+
+### 2. Push this repo to GitHub
+Render's Blueprint deploy reads `render.yaml` from a connected GitHub repo.
+Commit and push everything in this phase's diff (`Dockerfile.render`,
+`render.yaml`, `render_app.py`, `render_seed.py`, `render_entrypoint.sh`,
+plus the shared-code changes to `settings.py`/`reason_codes.py`/
+`scoring.py`/`monitoring.py`/`urls.py`/`home.html`) before starting the
+Render setup below.
+
+### 3. Create the Blueprint on Render
+1. [dashboard.render.com](https://dashboard.render.com) → **New** → **Blueprint**.
+2. Connect the GitHub repo. Render detects `render.yaml` automatically.
+3. It will prompt for the two `sync: false` env vars declared in
+   `render.yaml`:
+   - `DATABASE_URL` — paste the Neon connection string from step 1.
+   - `SECRET_KEY` — generate one: `python -c "import secrets; print(secrets.token_urlsafe(50))"`.
+4. Click **Apply**. Render builds `Dockerfile.render` (~5-8 min expected;
+   each failed build costs real build-minute quota, so double-check
+   `DATABASE_URL`/`SECRET_KEY` are entered correctly before applying).
+
+### 4. First-deploy verification
+Watch the deploy logs for, in order:
+1. `Applying users.0004_decision_reviewlabel... OK` (and the other
+   migrations) — confirms `DATABASE_URL` is reachable.
+2. `render_seed: ... seeding from scratch` then `render_seed: done. Scored
+   N events in Xs` — **check X against the 45s budget**. If it consistently
+   hits the cutoff, lower `RENDER_SEED_N_SCORE` (Render dashboard → service
+   → Environment) to 100-150 and trigger a redeploy (env-var-only change,
+   no rebuild).
+3. `Sentinel scoring service ready. cold=... warm=... store=memory` — the
+   FastAPI sub-app's lifespan ran.
+4. Uvicorn's own "Application startup complete" / listening line.
+
+Then open the assigned `https://<service>.onrender.com` URL: the landing
+page should render, `/prediction/` (after registering an account) should
+score a transaction, `/monitoring/` should show the seeded decisions, and
+`/api/docs` should show the FastAPI Swagger UI.
+
+### 5. Known free-tier behaviors, not bugs
+- **Sleeps after 15 min idle.** The next request after a sleep takes
+  noticeably longer (cold start: container boot + `render_seed.py`'s
+  idempotent no-op check, which is fast since it just skips once >= 500
+  rows exist — the slow first-ever seed only happens once, on the very
+  first deploy).
+- **The "Replay N events" button will be slow** — the monitoring page
+  already says why (0.1 CPU vs. the 27ms p99 measured on dedicated local
+  hardware).

@@ -1,0 +1,28 @@
+# Render Blueprint for the combined single-process deploy target.
+# See DEPLOY_NOTES.md for click-by-click setup (Neon database, first deploy,
+# what to check in the logs).
+services:
+  - type: web
+    name: sentinel-upi-risk-engine
+    runtime: docker
+    dockerfilePath: ./Dockerfile.render
+    plan: free
+    healthCheckPath: /healthz/
+    envVars:
+      # Neon Postgres connection string (permanent free tier -- NOT Render's
+      # own free Postgres, which expires 30 days after creation). Set this
+      # in the Render dashboard, not here -- sync: false means Render
+      # prompts for it instead of storing it in this file.
+      - key: DATABASE_URL
+        sync: false
+      - key: SECRET_KEY
+        sync: false
+      - key: DEBUG
+        value: "False"
+      - key: STORE_BACKEND
+        value: memory
+      # Usually unnecessary -- backend/config/settings.py auto-detects
+      # Render's own RENDER_EXTERNAL_HOSTNAME and adds a .onrender.com
+      # wildcard automatically. Override only for a custom domain.
+      - key: ALLOWED_HOSTS
+        value: ""

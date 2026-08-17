@@ -28,8 +28,28 @@ from ml.src.utils.paths import COLD_MODEL_PATH, WARM_MODEL_PATH  # noqa: E402
 _cold_model = joblib.load(COLD_MODEL_PATH)
 _warm_model = joblib.load(WARM_MODEL_PATH)
 
-_cold_explainer = shap.TreeExplainer(_cold_model)
-_warm_explainer = shap.TreeExplainer(_warm_model)
+# Lazy-loaded (2026-08-17, Render deploy target): shap.TreeExplainer's own
+# construction is real, measurable startup cost -- on a slow enough CPU
+# (e.g. Render free tier's 0.1 vCPU) it's worth deferring past process
+# startup, not just past model loading. Built once, on the first ACTUAL
+# non-ALLOW decision, and cached from then on -- every call after the first
+# is exactly as fast as the eager version was. This intentionally reverses
+# service/scoring.py's Phase 3 docstring claim that explainer construction
+# happens "at IMPORT time" -- see that module's own updated comment.
+_cold_explainer = None
+_warm_explainer = None
+
+
+def _get_explainer(is_cold: bool):
+    global _cold_explainer, _warm_explainer
+    if is_cold:
+        if _cold_explainer is None:
+            _cold_explainer = shap.TreeExplainer(_cold_model)
+        return _cold_explainer
+    if _warm_explainer is None:
+        _warm_explainer = shap.TreeExplainer(_warm_model)
+    return _warm_explainer
+
 
 CATEGORICAL_FEATURES = ["amount_roundness"]
 LATENCY_BUDGET_MS = 20.0
@@ -128,10 +148,8 @@ def compute_reason_codes(feature_vector: dict, is_cold: bool, top_n: int = 5) ->
     Each entry: {code, message, feature, value, shap_contribution}.
     `message` never contains a raw feature name.
     """
-    if is_cold:
-        explainer, feature_columns = _cold_explainer, COLD_FEATURES
-    else:
-        explainer, feature_columns = _warm_explainer, ALL_FEATURES
+    explainer = _get_explainer(is_cold)
+    feature_columns = COLD_FEATURES if is_cold else ALL_FEATURES
 
     X = _prepare_row(feature_vector, feature_columns)
     shap_values = explainer.shap_values(X)

@@ -73,11 +73,12 @@ def _assert_feature_registry_matches_code():
 def load_models():
     """Runs the feature-registry startup guard FIRST, then loads cold/warm
     models + calibrators, then -- only now -- imports ml.src.policy.reason_codes
-    (which itself eagerly loads its own model copies and builds SHAP
-    TreeExplainers at IMPORT time, a Phase 3 design choice we're not
-    changing). Returns the feature_registry.json dict so callers (API
-    lifespan, worker startup) can read model_version/etc without a second
-    file read.
+    (which loads its own model copies at import time, but -- as of the
+    Render deploy target, 2026-08-17 -- lazily constructs its SHAP
+    TreeExplainers on first actual use, not at import time; see that
+    module's own comment for why). Returns the feature_registry.json dict
+    so callers (API lifespan, worker startup) can read model_version/etc
+    without a second file read.
     """
     global _cold_model, _warm_model, _cold_calibrator, _warm_calibrator, _compute_reason_codes, _loaded
 

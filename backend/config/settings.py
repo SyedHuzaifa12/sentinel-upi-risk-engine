@@ -67,6 +67,27 @@ if not SECRET_KEY:
 
 ALLOWED_HOSTS = [host for host in os.getenv('ALLOWED_HOSTS', '').split(',') if host]
 
+# Render deploy target (2026-08-17): Render injects RENDER_EXTERNAL_HOSTNAME
+# automatically (the actual assigned <service>.onrender.com hostname) --
+# adding it here means the exact subdomain never has to be known/guessed
+# before the first deploy. ".onrender.com" (leading dot -- Django's own
+# wildcard-subdomain syntax for ALLOWED_HOSTS) is added too as a fallback,
+# harmless on every other deploy target since it's simply never matched
+# when the request doesn't come from that domain.
+_render_hostname = os.getenv('RENDER_EXTERNAL_HOSTNAME')
+if _render_hostname:
+    ALLOWED_HOSTS.append(_render_hostname)
+if '.onrender.com' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append('.onrender.com')
+
+# CSRF_TRUSTED_ORIGINS needs a full scheme+host (unlike ALLOWED_HOSTS) --
+# Django 4.0+ supports a leading-wildcard host here too. Same reasoning as
+# ALLOWED_HOSTS above: harmless on every deploy target other than Render.
+CSRF_TRUSTED_ORIGINS = [origin for origin in os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',') if origin]
+if _render_hostname:
+    CSRF_TRUSTED_ORIGINS.append(f'https://{_render_hostname}')
+CSRF_TRUSTED_ORIGINS.append('https://*.onrender.com')
+
 if not DEBUG:
     # Security hardening that only makes sense once DEBUG is off (these would
     # break local http:// development, so they're not applied unconditionally).
@@ -76,6 +97,12 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = int(os.getenv('SECURE_HSTS_SECONDS', '3600'))
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
+    # Render terminates TLS at its own edge proxy and forwards plain HTTP to
+    # the container with this header set -- without it, Django (seeing an
+    # apparently-plain-HTTP request) would redirect-loop against
+    # SECURE_SSL_REDIRECT above, since it can't otherwise tell the original
+    # request arrived over HTTPS.
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 
 # Application definition

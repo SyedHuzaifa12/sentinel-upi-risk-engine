@@ -1,1334 +1,186 @@
-<!doctype html>
-{% load static %}
+<!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="description" content="UPI Fraud Detection System using Machine Learning">
-        <meta name="author" content="">
-
-        <title>UPI Shield - AI-Powered Fraud Detection</title>
-
-        <!-- Fonts -->
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-        
-        <!-- CSS -->
-        <link href="/static/css/bootstrap.min.css" rel="stylesheet">
-        <link href="/static/css/bootstrap-icons.css" rel="stylesheet">
-        
-        <!-- Custom Styles -->
-        <!-- Custom Styles -->
-<style>
-    :root {
-        --primary-gradient: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-        --danger-gradient: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-        --success-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
-        --warning-gradient: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-        --light-bg: #f8fafc;
-        --card-bg: #ffffff;
-        --text-primary: #1e293b;
-        --text-secondary: #64748b;
-        --border-color: #e2e8f0;
-    }
-    
-    body {
-        font-family: 'Inter', sans-serif;
-        background: linear-gradient(135deg, #f1f5f9 0%, #f8fafc 100%);
-        color: var(--text-primary);
-        min-height: 100vh;
-    }
-    
-    .navbar {
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(10px);
-        border-bottom: 1px solid var(--border-color);
-        padding: 1rem 0;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    }
-    
-    .navbar-brand {
-        font-family: 'Poppins', sans-serif;
-        font-weight: 700;
-        font-size: 1.8rem;
-        background: var(--primary-gradient);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-    
-    .nav-link {
-        color: var(--text-secondary) !important;
-        font-weight: 500;
-        padding: 0.5rem 1rem !important;
-        border-radius: 8px;
-        transition: all 0.3s ease;
-    }
-    
-    .nav-link:hover, .nav-link.active {
-        background: rgba(79, 70, 229, 0.1);
-        color: #4f46e5 !important;
-        transform: translateY(-2px);
-    }
-    
-    .nav-buttons {
-        display: flex;
-        gap: 8px;
-        margin-left: 20px;
-    }
-    
-    .nav-buttons .btn {
-        padding: 8px 16px;
-        font-size: 0.9rem;
-        font-weight: 500;
-        border-radius: 8px;
-        transition: all 0.3s ease;
-    }
-    
-    .nav-buttons .btn-outline-light {
-        border-color: var(--border-color);
-        color: var(--text-secondary);
-    }
-    
-    .nav-buttons .btn-outline-light:hover {
-        background: rgba(79, 70, 229, 0.1);
-        color: #4f46e5;
-        border-color: #4f46e5;
-        transform: translateY(-2px);
-    }
-    
-    .nav-buttons .btn-primary {
-        background: var(--primary-gradient);
-        border: none;
-    }
-    
-    .fraud-cta-btn {
-        background: var(--primary-gradient);
-        color: white;
-        padding: 12px 30px;
-        border-radius: 12px;
-        font-weight: 600;
-        border: none;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 15px rgba(20, 15, 63, 0.3);
-    }
-    
-    .fraud-cta-btn:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 6px 20px rgba(22, 111, 194, 0.4);
-        color: white;
-    }
-    
-    .hero-section {
-        padding: 120px 0 80px;
-        position: relative;
-        overflow: hidden;
-        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-    }
-    
-    .hero-section::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: 
-            radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.15) 0%, transparent 50%),
-            radial-gradient(circle at 80% 20%, rgba(124, 58, 237, 0.1) 0%, transparent 50%);
-        z-index: -1;
-    }
-    
-    .hero-title {
-        font-size: 3.5rem;
-        font-weight: 800;
-        color: white;
-        margin-bottom: 1.5rem;
-        line-height: 1.2;
-    }
-    
-    .hero-subtitle {
-        font-size: 1.2rem;
-        color: rgba(255, 255, 255, 0.9);
-        margin-bottom: 2rem;
-        max-width: 600px;
-    }
-    
-    .stat-card {
-        background: white;
-        border-radius: 16px;
-        padding: 2rem;
-        border: 1px solid var(--border-color);
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-        transition: all 0.3s ease;
-    }
-    
-    .stat-card:hover {
-        transform: translateY(-10px);
-        border-color: #4f46e5;
-        box-shadow: 0 10px 30px rgba(79, 70, 229, 0.1);
-    }
-    
-    .stat-number {
-        font-size: 2.5rem;
-        font-weight: 800;
-        background: var(--primary-gradient);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }
-    
-    .fraud-visualization {
-        background: var(--card-bg);
-        border-radius: 20px;
-        padding: 2rem;
-        border: 1px solid var(--border-color);
-        box-shadow: 0 4px 6px rgba(41, 11, 23, 0.05);
-    }
-    
-    /* Fraud Chart Styles */
-    .chart-container {
-        background: rgb(23, 42, 70);
-        border-radius: 12px;
-        padding: 1.5rem;
-        border: 1px solid var(--border-color);
-    }
-    
-    .chart-bar {
-        width: 40px;
-        border-radius: 8px 8px 0 0;
-        position: relative;
-        transition: height 0.5s ease;
-        animation: growBar 1s ease-out forwards;
-    }
-    
-    .chart-label {
-        position: absolute;
-        top: -25px;
-        left: 0;
-        right: 0;
-        font-size: 11px;
-        color: var(--text-secondary);
-    }
-    
-    .chart-value {
-        position: absolute;
-        bottom: -25px;
-        left: 0;
-        right: 0;
-        font-size: 12px;
-        font-weight: 600;
-    }
-    
-    @keyframes growBar {
-        from { height: 0; }
-    }
-    
-    /* Timeline Styles */
-    .timeline-item {
-        display: flex;
-        margin-bottom: 1.5rem;
-        position: relative;
-    }
-    
-    .timeline-item:not(:last-child)::after {
-        content: '';
-        position: absolute;
-        left: 24px;
-        top: 48px;
-        bottom: -1.5rem;
-        width: 2px;
-        background: var(--border-color);
-    }
-    
-    .timeline-icon {
-        width: 48px;
-        height: 48px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-right: 1rem;
-        flex-shrink: 0;
-        font-size: 1.2rem;
-        background: var(--primary-gradient);
-        color: white;
-    }
-    
-    .timeline-content {
-        padding-top: 0.5rem;
-    }
-    
-    .timeline-content h5 {
-        margin-bottom: 0.5rem;
-        font-size: 1rem;
-        color: var(--text-primary);
-    }
-    
-    .timeline-content p {
-        color: var(--text-secondary);
-    }
-    
-    /* New Visualization Styles */
-    .fraud-metrics-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1rem;
-        margin: 2rem 0;
-    }
-    
-    .metric-circle {
-        width: 120px;
-        height: 120px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto;
-        position: relative;
-        background: conic-gradient(#ef4444 0% 65%, #e2e8f0 65% 100%);
-    }
-    
-    .metric-circle::before {
-        content: '';
-        position: absolute;
-        width: 90px;
-        height: 90px;
-        background: rgb(250, 247, 247);
-        border-radius: 50%;
-    }
-    
-    .metric-circle .value {
-        position: relative;
-        z-index: 1;
-        font-size: 1.8rem;
-        font-weight: 700;
-        color: var(--text-primary);
-    }
-    
-    .fraud-map {
-        background: rgb(14, 50, 51);
-        border-radius: 12px;
-        padding: 1.5rem;
-        position: relative;
-        overflow: hidden;
-        border: 1px solid var(--border-color);
-    }
-    
-    .fraud-map::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-image: 
-            radial-gradient(circle at 30% 40%, rgba(239, 68, 68, 0.2) 2%, transparent 4%),
-            radial-gradient(circle at 70% 30%, rgba(239, 68, 68, 0.3) 3%, transparent 5%),
-            radial-gradient(circle at 50% 70%, rgba(239, 68, 68, 0.15) 2%, transparent 4%),
-            radial-gradient(circle at 80% 60%, rgba(245, 158, 11, 0.2) 2%, transparent 4%);
-        background-size: 200px 200px;
-    }
-    
-    .feature-card {
-        background: white;
-        border-radius: 16px;
-        padding: 2rem;
-        height: 100%;
-        border: 1px solid var(--border-color);
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-        transition: all 0.3s ease;
-    }
-    
-    .feature-card:hover {
-        background: white;
-        transform: translateY(-5px);
-        border-color: #4f46e5;
-        box-shadow: 0 8px 25px rgba(79, 70, 229, 0.1);
-    }
-    
-    .feature-icon {
-        width: 60px;
-        height: 60px;
-        background: var(--primary-gradient);
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: 1.5rem;
-        font-size: 1.5rem;
-        color: white;
-    }
-    
-    .fraud-type-card {
-        background: rgba(239, 68, 68, 0.05);
-        border: 1px solid rgba(239, 68, 68, 0.2);
-        border-radius: 12px;
-        padding: 1.5rem;
-        transition: all 0.3s ease;
-    }
-    
-    .fraud-type-card:hover {
-        background: rgba(239, 68, 68, 0.08);
-        transform: translateY(-5px);
-        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.1);
-    }
-    
-    .fraud-type-card.warning {
-        background: rgba(245, 158, 11, 0.05);
-        border-color: rgba(245, 158, 11, 0.2);
-    }
-    
-    .fraud-type-card.warning:hover {
-        background: rgba(245, 158, 11, 0.08);
-        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.1);
-    }
-    
-    .fraud-type-card.success {
-        background: rgba(34, 197, 94, 0.05);
-        border-color: rgba(34, 197, 94, 0.2);
-    }
-    
-    .fraud-type-card.success:hover {
-        background: rgba(34, 197, 94, 0.08);
-        box-shadow: 0 4px 12px rgba(34, 197, 94, 0.1);
-    }
-    
-    .section-title {
-        font-size: 2.5rem;
-        font-weight: 800;
-        margin-bottom: 1rem;
-        color: var(--text-primary);
-    }
-    
-    .section-subtitle {
-        color: var(--text-secondary);
-        font-size: 1.1rem;
-        max-width: 700px;
-        margin: 0 auto 3rem;
-    }
-    
-    /* UPI Fraud Patterns */
-    .fraud-pattern {
-        background: white;
-        border-radius: 12px;
-        padding: 1.5rem;
-        margin-bottom: 1rem;
-        border-left: 4px solid #ef4444;
-        border: 1px solid var(--border-color);
-    }
-    
-    .fraud-pattern.warning {
-        border-left-color: #f59e0b;
-    }
-    
-    .fraud-pattern.info {
-        border-left-color: #3b82f6;
-    }
-    
-    .text-muted {
-        color: var(--text-secondary) !important;
-    }
-    
-    footer {
-        background: white;
-        border-top: 1px solid var(--border-color);
-        padding: 3rem 0;
-        margin-top: 5rem;
-        box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.05);
-    }
-    
-    /* Updated text colors for light theme */
-    .text-white {
-        color: var(--text-primary) !important;
-    }
-    
-    .text-primary {
-        color: #4f46e5 !important;
-    }
-    
-    .text-success {
-        color: #10b981 !important;
-    }
-    
-    .text-warning {
-        color: #f59e0b !important;
-    }
-    
-    .text-info {
-        color: #3b82f6 !important;
-    }
-    
-    .text-danger {
-        color: #ef4444 !important;
-    }
-    
-    /* Badge styles for light theme */
-    .badge {
-        color: white !important;
-    }
-    
-    .badge.bg-danger {
-        background: var(--danger-gradient) !important;
-    }
-    
-    .badge.bg-warning {
-        background: var(--warning-gradient) !important;
-    }
-    
-    .badge.bg-success {
-        background: var(--success-gradient) !important;
-    }
-    
-    .badge.bg-dark {
-        background: var(--text-primary) !important;
-    }
-    
-    /* Button outline for light theme */
-    .btn-outline-light {
-        color: var(--text-secondary);
-        border-color: var(--border-color);
-    }
-    
-    .btn-outline-light:hover {
-        background: rgba(79, 70, 229, 0.1);
-        color: #4f46e5;
-        border-color: #4f46e5;
-    }
-    
-    /* Hero section buttons */
-    .hero-section .btn-outline-light {
-        color: white;
-        border-color: rgba(255, 255, 255, 0.3);
-    }
-    
-    .hero-section .btn-outline-light:hover {
-        background: rgba(255, 255, 255, 0.1);
-        color: white;
-        border-color: white;
-    }
-    
-    @media (max-width: 768px) {
-        .hero-title {
-            font-size: 2.5rem;
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Real-time UPI transaction risk scoring -- allow/warn/review/block, decided before the money moves. Synthetic-data portfolio project.">
+    <title>Sentinel UPI Risk Engine</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: linear-gradient(160deg, #f4f9ff 0%, #e8f0f8 100%);
+            color: #1c3144; line-height: 1.6;
         }
-        
-        .section-title {
-            font-size: 2rem;
+        .container { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+        .card {
+            background: #fff; border-radius: 1.8rem; padding: 2rem 2.2rem;
+            box-shadow: 0 20px 40px -20px rgba(8,40,70,0.25); margin-bottom: 1.5rem;
         }
-        
-        .nav-buttons {
-            margin-top: 1rem;
-            flex-wrap: wrap;
-            justify-content: center;
+        .nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
+        .brand { font-size: 1.3rem; font-weight: 800; color: #123653; }
+        .nav a {
+            color: #164466; text-decoration: none; font-weight: 600; font-size: 0.9rem;
+            margin-left: 1.2rem;
         }
-    }
-    
-    @media (max-width: 992px) {
-        .nav-buttons {
-            display: none;
+        .nav a.cta { background: #164466; color: white; padding: 0.5rem 1.1rem; border-radius: 8px; }
+        h1 { font-size: 2.2rem; font-weight: 800; color: #123653; margin-bottom: 0.6rem; line-height: 1.25; }
+        h2 { font-size: 1.3rem; font-weight: 700; color: #123653; margin-bottom: 0.9rem; }
+        .pitch { font-size: 1.1rem; color: #3a5878; margin-bottom: 1rem; }
+        .synthetic-banner {
+            background: #fff3e0; border: 1.5px solid #ffcc80; border-radius: 1rem;
+            padding: 0.9rem 1.3rem; font-size: 0.9rem; color: #7a4a00; display: flex;
+            gap: 10px; align-items: flex-start; margin-top: 1rem;
         }
-        
-        .mobile-nav-buttons {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 1rem;
+        .synthetic-banner i { color: #e07800; margin-top: 2px; }
+        .cta-row { display: flex; gap: 0.9rem; flex-wrap: wrap; margin-top: 1.3rem; }
+        .cta-row a {
+            padding: 0.7rem 1.3rem; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 0.92rem;
         }
-    }
-</style>
-    </head>
+        .cta-primary { background: #164466; color: white; }
+        .cta-secondary { background: #ecf3fa; color: #164466; }
+        .flow { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin: 1rem 0; font-size: 0.82rem; }
+        .flow-box {
+            background: #ecf3fa; border: 1px solid #c9ddef; border-radius: 8px;
+            padding: 0.55rem 0.8rem; color: #164466; font-weight: 600; white-space: nowrap;
+        }
+        .flow-arrow { color: #7d95af; }
+        .flow-lib {
+            background: #164466; color: white; border-radius: 8px; padding: 0.55rem 0.9rem;
+            font-weight: 700; white-space: nowrap;
+        }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-top: 0.5rem; }
+        th {
+            background: #f2f8ff; color: #0f3b5c; font-weight: 600; font-size: 0.78rem;
+            text-transform: uppercase; letter-spacing: 0.02em; padding: 0.7rem 0.6rem;
+            border-bottom: 2px solid #c9ddef; text-align: left;
+        }
+        td { padding: 0.6rem 0.6rem; border-bottom: 1px solid #e6eef7; }
+        .links-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 0.8rem; }
+        @media (max-width: 700px) { .links-grid { grid-template-columns: 1fr; } }
+        .link-card {
+            background: #ecf3fa; border-radius: 1rem; padding: 1.1rem 1.3rem; text-decoration: none;
+            color: #123653; display: block;
+        }
+        .link-card i { color: #164466; margin-right: 8px; }
+        .link-card .desc { color: #4d6a86; font-size: 0.85rem; margin-top: 0.3rem; }
+        footer { text-align: center; color: #7d95af; font-size: 0.85rem; padding: 1.5rem 0; }
+        footer a { color: #164466; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="nav">
+        <div class="brand"><i class="fas fa-shield-halved"></i> Sentinel UPI Risk Engine</div>
+        <div>
+            {% if user.is_authenticated %}
+                <a href="{% url 'monitoring_dashboard' %}">Monitoring</a>
+                <a href="{% url 'review_queue' %}">Review queue</a>
+                <a href="{% url 'prediction' %}">Sandbox</a>
+                <a href="{% url 'logout_view' %}" class="cta">Log out</a>
+            {% else %}
+                <a href="{% url 'login' %}">Log in</a>
+                <a href="{% url 'users-register' %}" class="cta">Sign up</a>
+            {% endif %}
+        </div>
+    </div>
 
-    <body>
-
-        <!-- Navigation -->
-        <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
-            <div class="container">
-                <a class="navbar-brand" href="/">
-                    <i class="bi-shield-shaded me-2"></i>
-                    UPI Shield
-                </a>
-                
-                <!-- Desktop Navigation Buttons -->
-                <div class="nav-buttons d-none d-lg-flex">
-                    <a href="/" class="btn btn-outline-light">
-                        <i class="bi-house-door me-1"></i>Home
-                    </a>
-                    {% if user.is_authenticated %}
-                    <a href="{% url 'prediction' %}" class="btn btn-outline-light">
-                        <i class="bi-search me-1"></i>Prediction
-                    </a>
-                    <a href="{% url 'users-profile' %}" class="btn btn-outline-light">
-                        <i class="bi-person me-1"></i>Profile
-                    </a>
-                    <a href="{% url 'database' %}" class="btn btn-outline-light">
-                        <i class="bi-database me-1"></i>Database
-                    </a>
-                    <a href="{% url 'Basic_report' %}" class="btn btn-outline-light">
-                        <i class="bi-file-earmark-text me-1"></i>Report
-                    </a>
-                    {% endif %}
-                    <a href="{% url 'awareness' %}" class="btn btn-outline-light">
-                        <i class="bi-file-earmark-text me-1"></i>Awareness Page
-                    </a>
-                </div>
-                
-                <div class="d-flex align-items-center">
-                   
-                    
-                    {% if user.is_authenticated %}
-                    <a href="{% url 'logout_view' %}" class="btn btn-outline-light btn-sm">
-                        <i class="bi-box-arrow-right me-1"></i> Logout
-                    </a>
-                    {% else %}
-                    <a href="{% url 'users-register' %}" class="btn btn-primary btn-sm">
-                        <i class="bi-person-plus me-1"></i> Login
-                    </a>
-                    {% endif %}
-                    
-                    <button class="navbar-toggler ms-2 d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#mobileNav">
-                        <span class="navbar-toggler-icon"></span>
-                    </button>
-                </div>
-            </div>
-        </nav>
-
-        <!-- Mobile Navigation -->
-        <div class="collapse d-lg-none" id="mobileNav">
-            <div class="container py-3">
-                <div class="mobile-nav-buttons">
-                    <a href="/" class="btn btn-outline-light btn-sm">
-                        <i class="bi-house-door me-1"></i>Home
-                    </a>
-                    {% if user.is_authenticated %}
-                    <a href="{% url 'prediction' %}" class="btn btn-outline-light btn-sm">
-                        <i class="bi-search me-1"></i>Prediction
-                    </a>
-                    <a href="{% url 'users-profile' %}" class="btn btn-outline-light btn-sm">
-                        <i class="bi-person me-1"></i>Profile
-                    </a>
-                    <a href="{% url 'database' %}" class="btn btn-outline-light btn-sm">
-                        <i class="bi-database me-1"></i>Database
-                    </a>
-                    <a href="{% url 'Basic_report' %}" class="btn btn-outline-light btn-sm">
-                        <i class="bi-file-earmark-text me-1"></i>Report
-                    </a>
-                    {% endif %}
-                    <a href="#about-upi" class="btn btn-outline-light btn-sm">
-                        <i class="bi-info-circle me-1"></i>About UPI
-                    </a>
-                </div>
+    <div class="card">
+        <h1>Real-time UPI transaction risk scoring — allow / warn / review / block, decided before the money moves.</h1>
+        <p class="pitch">
+            UPI fraud is overwhelmingly Authorised Push Payment fraud — the victim is
+            socially engineered and willingly authorises the payment, so device, PIN,
+            and location are all genuine. Detection has to come from payee-side
+            behaviour (mule fan-in, account age, pass-through velocity) and payer
+            deviation (first-ever payment to this VPA, amount z-score, collect-request
+            initiation) — not credential verification.
+        </p>
+        <div class="synthetic-banner">
+            <i class="fas fa-triangle-exclamation"></i>
+            <div>
+                <strong>All data here is synthetic.</strong> This is a systems/ML
+                engineering portfolio project, not a production fraud model — real
+                payment-fraud systems typically land at PR-AUC 0.3–0.7, not the 0.8455
+                measured here. Full honest breakdown in the README.
             </div>
         </div>
+        <div class="cta-row">
+            <a href="{% url 'prediction' %}" class="cta-primary"><i class="fas fa-flask"></i> Try the sandbox</a>
+            <a href="{% url 'monitoring_dashboard' %}" class="cta-secondary"><i class="fas fa-chart-line"></i> View live dashboard</a>
+            <a href="/api/docs" class="cta-secondary"><i class="fas fa-code"></i> API docs</a>
+        </div>
+    </div>
 
-        <!-- Hero Section -->
-        <section class="hero-section">
-            <div class="container">
-                <div class="row align-items-center">
-                    <div class="col-lg-6">
-                        <p class="text-primary mb-2 fw-bold">AI-Powered Protection</p>
-                        <h1 class="hero-title">Secure Your Digital Transactions with Intelligent Fraud Detection</h1>
-                        <p class="hero-subtitle">Real-time anomaly detection using advanced machine learning to protect your UPI payments from fraudulent activities.</p>
-                        
-                        <div class="d-flex gap-3 mb-4">
-                            {% if user.is_authenticated %}
-                            <a href="{% url 'prediction' %}" class="fraud-cta-btn">
-                                <i class="bi-shield-check me-2"></i>Start Detection
-                            </a>
-                            {% else %}
-                            <a href="{% url 'users-register' %}" class="fraud-cta-btn">
-                                <i class="bi-rocket-takeoff me-2"></i>Get Started Free
-                            </a>
-                            {% endif %}
-                            <a href="#features" class="btn btn-outline-light btn-lg">
-                                <i class="bi-play-circle me-2"></i>Learn More
-                            </a>
-                        </div>
-                        
-                        <div class="d-flex gap-4">
-                            <div>
-                                <i class="bi-check-circle-fill text-success me-1"></i>
-                                <span>99.5% Accuracy</span>
-                            </div>
-                            <div>
-                                <i class="bi-lightning-charge-fill text-warning me-1"></i>
-                                <span>Real-time Detection</span>
-                            </div>
-                            <div>
-                                <i class="bi-shield-fill-check text-info me-1"></i>
-                                <span>Bank-Level Security</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="col-lg-6 mt-5 mt-lg-0">
-                        <div class="position-relative">
-                            <img src="/static/images/new.png" class="img-fluid rounded-3 shadow-lg" alt="Fraud Detection Dashboard" style="border: 1px solid rgba(255,255,255,0.1);">
-                            <div class="position-absolute top-0 start-0 w-100 h-100">
-                                <div class="floating-card" style="position: absolute; top: -20px; right: -20px; background: var(--danger-gradient); padding: 1rem; border-radius: 12px; width: 150px; transform: rotate(5deg);">
-                                    <div class="text-white text-center">
-                                        <i class="bi-exclamation-triangle-fill display-6"></i>
-                                        <p class="mb-0 fw-bold">Fraud Alert</p>
-                                        <small>Blocked 24h</small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
+    <div class="card">
+        <h2>How it works</h2>
+        <div class="flow">
+            <div class="flow-box">Raw event</div>
+            <span class="flow-arrow">&rarr;</span>
+            <div class="flow-lib">feature_lib (1 impl, 3 call sites)</div>
+            <span class="flow-arrow">&rarr;</span>
+            <div class="flow-box">cold/warm LightGBM</div>
+            <span class="flow-arrow">&rarr;</span>
+            <div class="flow-box">isotonic calibration</div>
+            <span class="flow-arrow">&rarr;</span>
+            <div class="flow-box">cost-based decision</div>
+            <span class="flow-arrow">&rarr;</span>
+            <div class="flow-box">append-only decision log</div>
+        </div>
+        <p style="color:#4d6a86; font-size:0.92rem;">
+            Features are computed server-side from each payer/payee/device's own
+            transaction history, never supplied by the caller. Point-in-time
+            correctness is enforced at the history-store layer. A payee with fewer
+            than 3 prior transactions routes to the stricter <strong>cold</strong>
+            model; otherwise <strong>warm</strong>. Every decision gets a calibrated
+            probability, a cost-minimizing action, and — for anything above ALLOW —
+            per-transaction SHAP reason codes, never hardcoded explanation text.
+        </p>
+    </div>
 
-        <!-- Statistics Section -->
-        <section class="py-5">
-            <div class="container">
-                <div class="row g-4">
-                    <div class="col-md-3 col-6">
-                        <div class="stat-card text-center">
-                            <div class="stat-number">3.2M+</div>
-                            <p class="mb-0 text-muted">Transactions Analyzed</p>
-                        </div>
-                    </div>
-                    <div class="col-md-3 col-6">
-                        <div class="stat-card text-center">
-                            <div class="stat-number">99.5%</div>
-                            <p class="mb-0 text-muted">Detection Accuracy</p>
-                        </div>
-                    </div>
-                    <div class="col-md-3 col-6">
-                        <div class="stat-card text-center">
-                            <div class="stat-number">&lt;50ms</div>
-                            <p class="mb-0 text-muted">Response Time</p>
-                        </div>
-                    </div>
-                    <div class="col-md-3 col-6">
-                        <div class="stat-card text-center">
-                            <div class="stat-number">24/7</div>
-                            <p class="mb-0 text-muted">Active Monitoring</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
+    <div class="card">
+        <h2>Results, honest</h2>
+        <table>
+            <tr><td>Combined PR-AUC (cold+warm)</td><td><strong>0.8455</strong></td></tr>
+            <tr><td>— warm-only</td><td>0.8385</td></tr>
+            <tr><td>— cold-only</td><td>0.9111 [95% CI 0.79–1.00, n=22 test positives — wide, small sample]</td></tr>
+            <tr><td>Rules-baseline PR-AUC (sanity floor)</td><td>0.1136</td></tr>
+            <tr><td>p99 scoring latency (measured locally, dedicated hardware)</td><td>27.32ms</td></tr>
+        </table>
+        <p style="color:#4d6a86; font-size:0.85rem; margin-top:0.8rem;">
+            Full metrics, the threshold-vs-net-benefit curve, and what would be done
+            differently with real data are in the
+            <a href="https://github.com" style="color:#164466;">README</a> and
+            <code>DESIGN.md</code>.
+        </p>
+    </div>
 
-        <!-- UPI Fraud Visualization Section -->
-        <section id="fraud-visualization" class="py-5">
-            <div class="container">
-                <div class="text-center mb-5">
-                    <h2 class="section-title">UPI Fraud Visualization Dashboard</h2>
-                    <p class="section-subtitle">Interactive insights into fraud patterns and detection metrics</p>
-                </div>
-                
-                <div class="row g-4 mb-5">
-                    <!-- Fraud Trends Chart -->
-                    <div class="col-lg-6">
-                        <div class="fraud-visualization">
-                            <h4 class="mb-4">Fraud Trends (2023-2024)</h4>
-                            
-                            <div class="chart-container mb-4">
-                                <div class="d-flex align-items-end justify-content-between mb-3">
-                                    <div class="text-center">
-                                        <div class="chart-bar" style="height: 120px; background: linear-gradient(to top, #ef4444, #f87171);">
-                                            <div class="chart-label">Phishing</div>
-                                            <div class="chart-value">+42%</div>
-                                        </div>
-                                        <small class="text-muted mt-1">2023</small>
-                                    </div>
-                                    <div class="text-center">
-                                        <div class="chart-bar" style="height: 160px; background: linear-gradient(to top, #ef4444, #f87171);">
-                                            <div class="chart-label">Phishing</div>
-                                            <div class="chart-value">+58%</div>
-                                        </div>
-                                        <small class="text-muted mt-1">2024</small>
-                                    </div>
-                                    <div class="text-center">
-                                        <div class="chart-bar" style="height: 90px; background: linear-gradient(to top, #f59e0b, #fbbf24);">
-                                            <div class="chart-label">Remote</div>
-                                            <div class="chart-value">+35%</div>
-                                        </div>
-                                        <small class="text-muted mt-1">2023</small>
-                                    </div>
-                                    <div class="text-center">
-                                        <div class="chart-bar" style="height: 130px; background: linear-gradient(to top, #f59e0b, #fbbf24);">
-                                            <div class="chart-label">Remote</div>
-                                            <div class="chart-value">+47%</div>
-                                        </div>
-                                        <small class="text-muted mt-1">2024</small>
-                                    </div>
-                                    <div class="text-center">
-                                        <div class="chart-bar" style="height: 70px; background: linear-gradient(to top, #10b981, #34d399);">
-                                            <div class="chart-label">SIM Swap</div>
-                                            <div class="chart-value">+28%</div>
-                                        </div>
-                                        <small class="text-muted mt-1">2023</small>
-                                    </div>
-                                    <div class="text-center">
-                                        <div class="chart-bar" style="height: 100px; background: linear-gradient(to top, #10b981, #34d399);">
-                                            <div class="chart-label">SIM Swap</div>
-                                            <div class="chart-value">+36%</div>
-                                        </div>
-                                        <small class="text-muted mt-1">2024</small>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="d-flex justify-content-between text-sm">
-                                <span class="badge bg-danger bg-opacity-25 text-danger">Phishing Attacks: +42%</span>
-                                <span class="badge bg-warning bg-opacity-25 text-warning">Remote Access: +35%</span>
-                                <span class="badge bg-success bg-opacity-25 text-success">SIM Swap: +28%</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Detection Timeline -->
-                    <div class="col-lg-6">
-                        <div class="fraud-visualization">
-                            <h4 class="mb-4">Fraud Detection Timeline</h4>
-                            <div class="timeline-item">
-                                <div class="timeline-icon">
-                                    <i class="bi-lightning-charge"></i>
-                                </div>
-                                <div class="timeline-content">
-                                    <h5>Transaction Initiation</h5>
-                                    <p class="text-muted mb-0">Real-time analysis begins within milliseconds of transaction request</p>
-                                </div>
-                            </div>
-                            <div class="timeline-item">
-                                <div class="timeline-icon">
-                                    <i class="bi-search"></i>
-                                </div>
-                                <div class="timeline-content">
-                                    <h5>Pattern Recognition</h5>
-                                    <p class="text-muted mb-0">ML models compare with 50K+ known fraud patterns</p>
-                                </div>
-                            </div>
-                            <div class="timeline-item">
-                                <div class="timeline-icon">
-                                    <i class="bi-shield-check"></i>
-                                </div>
-                                <div class="timeline-content">
-                                    <h5>Risk Assessment</h5>
-                                    <p class="text-muted mb-0">Multiple verification layers and behavioral analysis</p>
-                                </div>
-                            </div>
-                            <div class="timeline-item">
-                                <div class="timeline-icon">
-                                    <i class="bi-bell-fill"></i>
-                                </div>
-                                <div class="timeline-content">
-                                    <h5>Action & Alert</h5>
-                                    <p class="text-muted mb-0">Block suspicious transactions & instant user notification</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Fraud Metrics Grid -->
-                <div class="fraud-visualization mb-5">
-                    <h4 class="mb-4">Fraud Detection Metrics</h4>
-                    <div class="row g-4">
-                        <div class="col-md-4">
-                            <div class="text-center">
-                                <div class="metric-circle">
-                                    <span class="value">99.5%</span>
-                                </div>
-                                <h5 class="mt-3">Accuracy Rate</h5>
-                                <p class="text-muted small">Overall detection accuracy across all fraud types</p>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="text-center">
-                                <div class="metric-circle" style="background: conic-gradient(#3b82f6 0% 85%, #1e293b 85% 100%);">
-                                    <span class="value">85%</span>
-                                </div>
-                                <h5 class="mt-3">Prevention Rate</h5>
-                                <p class="text-muted small">Fraud attempts successfully prevented</p>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="text-center">
-                                <div class="metric-circle" style="background: conic-gradient(#10b981 0% 92%, #1e293b 92% 100%);">
-                                    <span class="value">92%</span>
-                                </div>
-                                <h5 class="mt-3">User Protection</h5>
-                                <p class="text-muted small">Users secured from fraud attempts</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Fraud Heat Map -->
-                <div class="fraud-visualization">
-                    <h4 class="mb-4">Fraud Activity Heat Map</h4>
-                    <div class="fraud-map" style="height: 300px;">
-                        <div class="position-absolute top-0 start-0 p-3">
-                            <div class="d-flex align-items-center gap-2">
-                                <div class="bg-danger rounded-circle" style="width: 10px; height: 10px;"></div>
-                                <small class="text-muted">High Fraud Activity</small>
-                            </div>
-                            <div class="d-flex align-items-center gap-2 mt-2">
-                                <div class="bg-warning rounded-circle" style="width: 10px; height: 10px;"></div>
-                                <small class="text-muted">Medium Activity</small>
-                            </div>
-                        </div>
-                        <div class="position-absolute bottom-0 end-0 p-3">
-                            <small class="text-muted">Real-time fraud density visualization</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- About UPI Section -->
-        <section id="about-upi" class="py-5">
-            <div class="container">
-                <div class="text-center mb-5">
-                    <h2 class="section-title">About UPI & Security Challenges</h2>
-                    <p class="section-subtitle">Understanding UPI technology and its security implications</p>
-                </div>
-                
-                <div class="row g-4 mb-5">
-                    <div class="col-lg-6">
-                        <div class="fraud-visualization">
-                            <h4 class="mb-4">What is UPI?</h4>
-                            <p class="text-muted">Unified Payments Interface (UPI) is an instant real-time payment system developed by the National Payments Corporation of India. It facilitates inter-bank peer-to-peer and person-to-merchant transactions.</p>
-                            
-                            <div class="fraud-pattern mt-4">
-                                <h6><i class="bi-lightning-charge-fill text-warning me-2"></i>Real-time Processing</h6>
-                                <p class="text-muted small mb-0">Transactions are processed instantly, making fraud detection challenging.</p>
-                            </div>
-                            
-                            <div class="fraud-pattern warning mt-3">
-                                <h6><i class="bi-phone-fill text-warning me-2"></i>Mobile-First Design</h6>
-                                <p class="text-muted small mb-0">Designed primarily for mobile devices, increasing vulnerability to mobile-based attacks.</p>
-                            </div>
-                            
-                            <div class="fraud-pattern info mt-3">
-                                <h6><i class="bi-shield-exclamation text-info me-2"></i>Security Challenges</h6>
-                                <p class="text-muted small mb-0">Lack of physical verification increases risk of digital fraud.</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="col-lg-6">
-                        <div class="fraud-visualization">
-                            <h4 class="mb-4">Common UPI Fraud Patterns</h4>
-                            
-                            <div class="fraud-type-card mb-3">
-                                <div class="d-flex align-items-start">
-                                    <div class="feature-icon me-3" style="width: 40px; height: 40px;">
-                                        <i class="bi-link-45deg"></i>
-                                    </div>
-                                    <div>
-                                        <h6>Phishing Links</h6>
-                                        <p class="text-muted small mb-0">Fraudulent links sent via SMS/WhatsApp posing as payment requests.</p>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="fraud-type-card warning mb-3">
-                                <div class="d-flex align-items-start">
-                                    <div class="feature-icon me-3" style="width: 40px; height: 40px; background: var(--warning-gradient);">
-                                        <i class="bi-phone-vibrate"></i>
-                                    </div>
-                                    <div>
-                                        <h6>Remote Access Scams</h6>
-                                        <p class="text-muted small mb-0">Fraudsters gain control of devices through screen-sharing apps.</p>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="fraud-type-card success">
-                                <div class="d-flex align-items-start">
-                                    <div class="feature-icon me-3" style="width: 40px; height: 40px; background: var(--success-gradient);">
-                                        <i class="bi-person-badge"></i>
-                                    </div>
-                                    <div>
-                                        <h6>SIM Swap Fraud</h6>
-                                        <p class="text-muted small mb-0">Fraudsters duplicate SIM cards to bypass OTP authentication.</p>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="fraud-type-card mt-3">
-                                <div class="d-flex align-items-start">
-                                    <div class="feature-icon me-3" style="width: 40px; height: 40px;">
-                                        <i class="bi-qr-code-scan"></i>
-                                    </div>
-                                    <div>
-                                        <h6>QR Code Manipulation</h6>
-                                        <p class="text-muted small mb-0">Malicious QR codes that redirect payments to fraudster accounts.</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Fraud Types -->
-                <h3 class="text-center mb-4">Advanced UPI Fraud Detection</h3>
-                <div class="row g-4">
-                    <div class="col-md-4">
-                        <div class="fraud-type-card">
-                            <div class="feature-icon mb-3" style="background: var(--danger-gradient);">
-                                <i class="bi-link-45deg"></i>
-                            </div>
-                            <h5>Phishing Links</h5>
-                            <p class="text-muted">Fraudulent links posing as legitimate payment requests</p>
-                            <div class="mt-3">
-                                <span class="badge bg-danger">High Risk</span>
-                                <small class="text-muted ms-2">Detected: 98.7%</small>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-4">
-                        <div class="fraud-type-card warning">
-                            <div class="feature-icon mb-3" style="background: var(--warning-gradient);">
-                                <i class="bi-phone-vibrate"></i>
-                            </div>
-                            <h5>Remote Access Scams</h5>
-                            <p class="text-muted">Taking control of devices to authorize payments</p>
-                            <div class="mt-3">
-                                <span class="badge bg-warning">Medium Risk</span>
-                                <small class="text-muted ms-2">Detected: 95.2%</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-4">
-                        <div class="fraud-type-card success">
-                            <div class="feature-icon mb-3" style="background: var(--success-gradient);">
-                                <i class="bi-person-badge"></i>
-                            </div>
-                            <h5>Identity Spoofing</h5>
-                            <p class="text-muted">Impersonating trusted contacts for payments</p>
-                            <div class="mt-3">
-                                <span class="badge bg-success">Low Risk</span>
-                                <small class="text-muted ms-2">Detected: 99.1%</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Features Section -->
-        <section id="features" class="py-5">
-            <div class="container">
-                <div class="text-center mb-5">
-                    <h2 class="section-title">How Our System Protects You</h2>
-                    <p class="section-subtitle">Advanced machine learning algorithms working together to secure every transaction</p>
-                </div>
-                
-                <div class="row g-4">
-                    <div class="col-md-4">
-                        <div class="feature-card">
-                            <div class="feature-icon">
-                                <i class="bi-cpu"></i>
-                            </div>
-                            <h4>Real-time Analysis</h4>
-                            <p class="text-muted">Transactions analyzed within milliseconds using ensemble learning models</p>
-                            <ul class="list-unstyled text-muted">
-                                <li><i class="bi-check-circle text-success me-2"></i>Live pattern matching</li>
-                                <li><i class="bi-check-circle text-success me-2"></i>Behavioral analysis</li>
-                                <li><i class="bi-check-circle text-success me-2"></i>Anomaly detection</li>
-                            </ul>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-4">
-                        <div class="feature-card">
-                            <div class="feature-icon">
-                                <i class="bi-shield-lock"></i>
-                            </div>
-                            <h4>Multi-layer Security</h4>
-                            <p class="text-muted">Multiple verification layers ensure maximum protection</p>
-                            <ul class="list-unstyled text-muted">
-                                <li><i class="bi-check-circle text-success me-2"></i>Device fingerprinting</li>
-                                <li><i class="bi-check-circle text-success me-2"></i>Location verification</li>
-                                <li><i class="bi-check-circle text-success me-2"></i>Time pattern analysis</li>
-                            </ul>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-4">
-                        <div class="feature-card">
-                            <div class="feature-icon">
-                                <i class="bi-graph-up-arrow"></i>
-                            </div>
-                            <h4>Adaptive Learning</h4>
-                            <p class="text-muted">System continuously learns from new fraud patterns</p>
-                            <ul class="list-unstyled text-muted">
-                                <li><i class="bi-check-circle text-success me-2"></i>Daily model updates</li>
-                                <li><i class="bi-check-circle text-success me-2"></i>Threat intelligence</li>
-                                <li><i class="bi-check-circle text-success me-2"></i>Pattern recognition</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- ML Pipeline -->
-        <section class="py-5">
-            <div class="container">
-                <div class="text-center mb-5">
-                    <h2 class="section-title">Machine Learning Pipeline</h2>
-                    <p class="section-subtitle">Our advanced fraud detection workflow</p>
-                </div>
-                
-                <div class="row g-4">
-                    <div class="col-lg-4 col-md-6">
-                        <div class="feature-card">
-                            <div class="d-flex align-items-center mb-3">
-                                <div class="feature-icon me-3">
-                                    <i class="bi-cpu"></i>
-                                </div>
-                                <div>
-                                    <span class="text-muted">Chapter 1</span>
-                                    <h5 class="mb-0">ML Core Engine</h5>
-                                </div>
-                            </div>
-                            <p class="text-muted">Advanced algorithms powering real-time fraud detection with ensemble learning.</p>
-                            <div class="mt-3">
-                                <span class="badge bg-dark me-1 mb-1">Random Forest</span>
-                                <span class="badge bg-dark me-1 mb-1">XGBoost</span>
-                                <span class="badge bg-dark me-1 mb-1">Neural Networks</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="col-lg-4 col-md-6">
-                        <div class="feature-card">
-                            <div class="d-flex align-items-center mb-3">
-                                <div class="feature-icon me-3">
-                                    <i class="bi-database"></i>
-                                </div>
-                                <div>
-                                    <span class="text-muted">Chapter 2</span>
-                                    <h5 class="mb-0">Data Processing</h5>
-                                </div>
-                            </div>
-                            <p class="text-muted">Cleaning, normalization, and feature engineering for optimal model performance.</p>
-                            <div class="mt-3">
-                                <span class="badge bg-dark me-1 mb-1">SMOTE</span>
-                                <span class="badge bg-dark me-1 mb-1">Feature Scaling</span>
-                                <span class="badge bg-dark me-1 mb-1">Data Augmentation</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="col-lg-4 col-md-6">
-                        <div class="feature-card">
-                            <div class="d-flex align-items-center mb-3">
-                                <div class="feature-icon me-3">
-                                    <i class="bi-bar-chart"></i>
-                                </div>
-                                <div>
-                                    <span class="text-muted">Chapter 3</span>
-                                    <h5 class="mb-0">Visual Analytics</h5>
-                                </div>
-                            </div>
-                            <p class="text-muted">Interactive dashboards and visualizations for fraud pattern analysis.</p>
-                            <div class="mt-3">
-                                <span class="badge bg-dark me-1 mb-1">Matplotlib</span>
-                                <span class="badge bg-dark me-1 mb-1">Seaborn</span>
-                                <span class="badge bg-dark me-1 mb-1">Plotly</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="col-lg-4 col-md-6">
-                        <div class="feature-card">
-                            <div class="d-flex align-items-center mb-3">
-                                <div class="feature-icon me-3">
-                                    <i class="bi-code-slash"></i>
-                                </div>
-                                <div>
-                                    <span class="text-muted">Chapter 4</span>
-                                    <h5 class="mb-0">Model Deployment</h5>
-                                </div>
-                            </div>
-                            <p class="text-muted">Production-ready integration with Django for real-world applications.</p>
-                            <div class="mt-3">
-                                <span class="badge bg-dark me-1 mb-1">Django</span>
-                                <span class="badge bg-dark me-1 mb-1">REST API</span>
-                                <span class="badge bg-dark me-1 mb-1">Microservices</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="col-lg-4 col-md-6">
-                        <div class="feature-card">
-                            <div class="d-flex align-items-center mb-3">
-                                <div class="feature-icon me-3">
-                                    <i class="bi-graph-up"></i>
-                                </div>
-                                <div>
-                                    <span class="text-muted">Chapter 5</span>
-                                    <h5 class="mb-0">Performance Metrics</h5>
-                                </div>
-                            </div>
-                            <p class="text-muted">Continuous monitoring and optimization using key performance indicators.</p>
-                            <div class="mt-3">
-                                <span class="badge bg-dark me-1 mb-1">Precision</span>
-                                <span class="badge bg-dark me-1 mb-1">Recall</span>
-                                <span class="badge bg-dark me-1 mb-1">F1-Score</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="col-lg-4 col-md-6">
-                        <div class="feature-card">
-                            <div class="d-flex align-items-center mb-3">
-                                <div class="feature-icon me-3">
-                                    <i class="bi-shield-check"></i>
-                                </div>
-                                <div>
-                                    <span class="text-muted">Chapter 6</span>
-                                    <h5 class="mb-0">Security Layer</h5>
-                                </div>
-                            </div>
-                            <p class="text-muted">Multi-factor authentication and encryption for secure operations.</p>
-                            <div class="mt-3">
-                                <span class="badge bg-dark me-1 mb-1">AES-256</span>
-                                <span class="badge bg-dark me-1 mb-1">OAuth2</span>
-                                <span class="badge bg-dark me-1 mb-1">JWT Tokens</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- CTA Section -->
-        <section class="py-5">
-            <div class="container">
-                <div class="row justify-content-center">
-                    <div class="col-lg-8 text-center">
-                        <div class="fraud-visualization">
-                            <h2 class="mb-4">Ready to Secure Your Transactions?</h2>
-                            <p class="text-muted mb-4">Join thousands of users protected by our AI-powered fraud detection system</p>
-                            
-                            {% if user.is_authenticated %}
-                            <div class="d-flex gap-3 justify-content-center">
-                                <a href="{% url 'prediction' %}" class="fraud-cta-btn btn-lg">
-                                    <i class="bi-shield-check me-2"></i>Run Detection Now
-                                </a>
-                                <a href="{% url 'database' %}" class="btn btn-outline-light btn-lg">
-                                    <i class="bi-database me-2"></i>View Database
-                                </a>
-                            </div>
-                            {% else %}
-                            <a href="{% url 'users-register' %}" class="fraud-cta-btn btn-lg px-5 py-3">
-                                <i class="bi-rocket-takeoff me-2"></i>Start Free Protection
-                            </a>
-                            <p class="text-muted mt-3 small">No credit card required • 30-day free trial</p>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Footer -->
-        <footer>
-            <div class="container">
-                <div class="row">
-                    <div class="col-lg-4 mb-4">
-                        <h4 class="mb-4">
-                            <i class="bi-shield-shaded me-2"></i>
-                            UPI Shield
-                        </h4>
-                        <p class="text-muted">Advanced AI-powered fraud detection for secure digital transactions.</p>
-                        <div class="d-flex gap-3">
-                            <a href="#" class="text-muted"><i class="bi-twitter"></i></a>
-                            <a href="#" class="text-muted"><i class="bi-linkedin"></i></a>
-                            <a href="#" class="text-muted"><i class="bi-github"></i></a>
-                        </div>
-                    </div>
-                    
-                    <div class="col-lg-2 col-6 mb-4">
-                        <h5 class="mb-3">Product</h5>
-                        <ul class="list-unstyled text-muted">
-                            <li class="mb-2"><a href="#features" class="text-decoration-none text-muted">Features</a></li>
-                            <li class="mb-2"><a href="{% url 'prediction' %}" class="text-decoration-none text-muted">Detection</a></li>
-                            <li class="mb-2"><a href="{% url 'Metrics_report' %}" class="text-decoration-none text-muted">Reports</a></li>
-                        </ul>
-                    </div>
-                    
-                    <div class="col-lg-2 col-6 mb-4">
-                        <h5 class="mb-3">Company</h5>
-                        <ul class="list-unstyled text-muted">
-                            <li class="mb-2"><a href="#about-upi" class="text-decoration-none text-muted">About UPI</a></li>
-                            <li class="mb-2"><a href="#" class="text-decoration-none text-muted">Careers</a></li>
-                            <li class="mb-2"><a href="#" class="text-decoration-none text-muted">Contact</a></li>
-                        </ul>
-                    </div>
-                    
-                    <div class="col-lg-4 mb-4">
-                        <h5 class="mb-3">Security Badges</h5>
-                        <div class="d-flex flex-wrap gap-2">
-                            <span class="badge bg-dark border border-secondary">GDPR Compliant</span>
-                            <span class="badge bg-dark border border-secondary">ISO 27001</span>
-                            <span class="badge bg-dark border border-secondary">Bank-Grade SSL</span>
-                            <span class="badge bg-dark border border-secondary">PCI DSS</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <hr class="my-4 border-secondary">
-                
-                <div class="row">
-                    <div class="col-md-6">
-                        <p class="text-muted small">&copy; 2024 UPI Shield. All rights reserved.</p>
-                    </div>
-                    <div class="col-md-6 text-md-end">
-                        <p class="text-muted small">
-                            <i class="bi-shield-check text-success me-1"></i>
-                            Last updated: {% now "F j, Y" %}
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </footer>
-
-        <!-- Scripts -->
-        <script src="/static/js/jquery.min.js"></script>
-        <script src="/static/js/bootstrap.bundle.min.js"></script>
-        <script>
-            // Add smooth scrolling
-            $(document).ready(function() {
-                $('a[href^="#"]').on('click', function(e) {
-                    e.preventDefault();
-                    var target = this.hash;
-                    var $target = $(target);
-                    $('html, body').animate({
-                        'scrollTop': $target.offset().top - 80
-                    }, 800, 'swing');
-                });
-                
-                // Add floating animation to cards
-                $('.feature-card').each(function(i) {
-                    $(this).css('animation-delay', (i * 0.1) + 's');
-                });
-                
-                // Animate metric circles on scroll
-                $(window).scroll(function() {
-                    $('.metric-circle').each(function() {
-                        var elementTop = $(this).offset().top;
-                        var elementBottom = elementTop + $(this).outerHeight();
-                        var viewportTop = $(window).scrollTop();
-                        var viewportBottom = viewportTop + $(window).height();
-                        
-                        if (elementBottom > viewportTop && elementTop < viewportBottom) {
-                            $(this).addClass('animated');
-                        }
-                    });
-                });
-            });
-        </script>
-    </body>
+    <div class="card">
+        <h2>Explore the system</h2>
+        <div class="links-grid">
+            <a href="{% url 'prediction' %}" class="link-card">
+                <div><i class="fas fa-flask"></i> Sandbox</div>
+                <div class="desc">Score a transaction by hand and see the decision + reason codes.</div>
+            </a>
+            <a href="{% url 'monitoring_dashboard' %}" class="link-card">
+                <div><i class="fas fa-chart-line"></i> Monitoring dashboard</div>
+                <div class="desc">Live alert rate, latency, drift, and review-queue health.</div>
+            </a>
+            <a href="{% url 'review_queue' %}" class="link-card">
+                <div><i class="fas fa-magnifying-glass"></i> Analyst review queue</div>
+                <div class="desc">Label alerted decisions as confirmed fraud, legit, or unclear.</div>
+            </a>
+            <a href="/api/docs" class="link-card">
+                <div><i class="fas fa-code"></i> API docs</div>
+                <div class="desc">The FastAPI scoring service's interactive OpenAPI docs.</div>
+            </a>
+        </div>
+    </div>
+</div>
+<footer>
+    Sentinel UPI Risk Engine — synthetic-data portfolio project. Deployed on Render's free tier;
+    see <code>DEPLOY_NOTES.md</code> for how.
+</footer>
+</body>
 </html>

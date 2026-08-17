@@ -1,0 +1,53 @@
+# Render deploy target -- a SECOND, ADDED deploy target. The plain
+# Dockerfile (docker-compose.yml's build) is untouched and remains the
+# primary local-dev image; this is a separate, slimmed single-process image
+# for Render's free tier (512MB RAM, 0.1 CPU). See DEPLOY_NOTES.md.
+#
+# Multi-stage: build tools (build-essential, dev headers) exist only in the
+# "builder" stage and never reach the final image -- only the compiled
+# packages + the RUNTIME (non-dev) shared libraries they link against ship.
+
+FROM python:3.11-slim AS builder
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+# Build-time only: headers/compilers needed to build cryptography/Pillow
+# wheels on slim images (same packages the plain Dockerfile installs).
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends build-essential libjpeg62-turbo-dev zlib1g-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+# --prefix, not the default site-packages -- this is what lets the final
+# stage copy ONLY the installed packages (COPY --from=builder /install
+# /usr/local below), never the build toolchain above.
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+
+FROM python:3.11-slim AS final
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+# RUNTIME shared libraries only (no "-dev" headers, no compiler) -- Pillow
+# and zlib-linked wheels still need these .so files present to import, even
+# though nothing in this stage ever compiles anything.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libjpeg62-turbo zlib1g \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /install /usr/local
+
+COPY . .
+
+RUN chmod +x render_entrypoint.sh \
+    && cd backend && DEBUG=True python manage.py collectstatic --noinput
+
+EXPOSE 8000
+
+CMD ["./render_entrypoint.sh"]

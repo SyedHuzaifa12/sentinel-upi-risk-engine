@@ -5,13 +5,19 @@ deliberate: these are the SQL artifacts for this project, kept as plain,
 readable, commented .sql files rather than buried in ORM method chains.
 """
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import connection
-from django.shortcuts import render
+from django.shortcuts import redirect, render
+from django.urls import reverse
+from django.views.decorators.http import require_POST
 
 from ml.src.utils.paths import ARTIFACTS_DIR, FEATURE_REGISTRY_PATH, THRESHOLDS_PATH
+
+REPLAY_N_EVENTS = 100
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 SQL_DIR = REPO_ROOT / "sql"
@@ -90,4 +96,87 @@ def monitoring_dashboard(request):
         "top_drifted": top_drifted,
         "cold_start_caveat": cold_start_caveat,
         "drift_report_generated_at": drift_report.get("generated_at_utc") if drift_report else None,
+        "replay_available": _replay_state() is not None,
+        "replay_n_events": REPLAY_N_EVENTS,
     })
+
+
+def _replay_state():
+    """The FastAPI sub-app's `.state.store`/`.state.decision_log`, but ONLY
+    when this Django process is actually running inside render_app.py's
+    combined ASGI process (Render deploy target) -- under docker-compose's
+    separate ui/api containers, `service.main.app`'s own lifespan never ran
+    in THIS process, so `.state` has no `store` attribute at all. Returns
+    None in that case rather than raising, so the button degrades to a
+    clear disabled state instead of a 500."""
+    from service.main import app as fastapi_app
+    if not hasattr(fastapi_app.state, "store") or fastapi_app.state.store is None:
+        return None
+    return fastapi_app.state
+
+
+@login_required
+@require_POST
+def replay_events(request):
+    """Scores REPLAY_N_EVENTS fresh synthetic events in-process (Render
+    deploy target only -- see _replay_state()) against the shared store and
+    decision log already loaded by render_app.py's combined lifespan. A
+    small payer/payee pool (not a fresh one per click) so payees recur
+    WITHIN a single 100-event batch, giving realistic warm-model routing
+    without needing to persist a separate identity pool across clicks --
+    unlike training/backtesting, a live demo button intentionally varies its
+    output per click (seeded from the current time), so this is not held to
+    the project's usual "always a fixed seed" reproducibility rule."""
+    state = _replay_state()
+    if state is None:
+        messages.error(
+            request,
+            "Live replay isn't available in this deployment -- it needs the combined "
+            "Render process (render_app.py), not the docker-compose ui/api split.",
+        )
+        return redirect(reverse("monitoring_dashboard"))
+
+    from ml.src.generator.generator import generate
+    from service import scoring
+
+    t_start = datetime.now(timezone.utc)
+    seed = int(t_start.timestamp())  # varies per click, deliberately -- see docstring above
+    events, _summary = generate(days=1, n_payers=15, n_payees=8, seed=seed, fraud_rate=0.03)
+    events = events[:REPLAY_N_EVENTS]
+
+    action_counts = {}
+    n_fraud_caught = 0
+    for event in events:
+        result = scoring.score_event(event, state.store)
+        action_counts[result.action] = action_counts.get(result.action, 0) + 1
+        if event.label_is_fraud and result.action != "ALLOW":
+            n_fraud_caught += 1
+        if state.decision_log is not None:
+            state.decision_log.record(
+                txn_id=result.txn_id,
+                event={
+                    "payer_vpa": event.payer_vpa, "payee_vpa": event.payee_vpa, "amount": event.amount,
+                    "label_is_fraud": event.label_is_fraud, "label_typology": event.label_typology,
+                },
+                feature_snapshot=result.feature_snapshot,
+                risk_score=result.risk_score,
+                raw_score=result.raw_score,
+                is_cold=result.is_cold,
+                action=result.action,
+                risk_tier=result.risk_tier,
+                reason_codes=result.reason_codes,
+                model_version=result.model_version,
+                thresholds_version=result.thresholds_version,
+                latency_ms=result.latency_ms,
+                scored_at=datetime.now(timezone.utc),
+                source="replay",
+            )
+
+    elapsed_s = (datetime.now(timezone.utc) - t_start).total_seconds()
+    messages.success(
+        request,
+        f"Replayed {len(events)} events in {elapsed_s:.1f}s -- {action_counts}, "
+        f"{n_fraud_caught} fraud caught. (Free-tier 0.1 CPU: this is expected to be "
+        f"much slower than the 27ms p99 measured locally with dedicated hardware.)",
+    )
+    return redirect(reverse("monitoring_dashboard"))

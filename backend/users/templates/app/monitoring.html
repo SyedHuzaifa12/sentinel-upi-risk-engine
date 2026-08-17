@@ -50,10 +50,28 @@
         .pill-sig { background: #fde7e9; color: #b11f2e; }
         .pill-ok { background: #e2f3e8; color: #1a6e3b; }
         .version-row { font-family: 'SFMono-Regular', Consolas, monospace; font-size: 0.85rem; color: #4d6a86; }
+        .messages { margin-bottom: 1rem; }
+        .messages .msg { padding: 0.7rem 1.1rem; border-radius: 0.8rem; margin-bottom: 0.5rem; font-size: 0.9rem; }
+        .msg.success { background: #e2f3e8; color: #1a6e3b; }
+        .msg.error { background: #fde7e9; color: #b11f2e; }
+        button.replay-btn {
+            background: #164466; color: white; border: none; border-radius: 8px;
+            padding: 0.6rem 1.2rem; font-size: 0.88rem; cursor: pointer; font-weight: 600;
+        }
+        button.replay-btn:hover { background: #1f5a82; }
+        button.replay-btn:disabled { background: #b7c4d1; cursor: not-allowed; }
     </style>
 </head>
 <body>
 <div class="container">
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+        <div class="msg {% if message.tags %}{{ message.tags }}{% endif %}">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
     <div class="card">
         <h1><i class="fas fa-chart-line"></i> Monitoring</h1>
         <p style="color:#4d6a86;">Live decision volume, latency, drift, and review-queue health.</p>
@@ -61,6 +79,26 @@
             <div class="stat"><div class="label">Cold model version</div><div class="value version-row">{{ cold_version }}</div></div>
             <div class="stat"><div class="label">Warm model version</div><div class="value version-row">{{ warm_version }}</div></div>
             <div class="stat"><div class="label">Thresholds version</div><div class="value version-row">{{ thresholds_version }}</div></div>
+        </div>
+
+        <div style="margin-top: 1.2rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+            <form method="post" action="{% url 'monitoring_replay' %}">
+                {% csrf_token %}
+                <button type="submit" class="replay-btn" {% if not replay_available %}disabled{% endif %}>
+                    <i class="fas fa-play"></i> Replay {{ replay_n_events }} events
+                </button>
+            </form>
+            {% if replay_available %}
+            <span style="color:#4d6a86; font-size:0.85rem;">
+                Scores {{ replay_n_events }} fresh synthetic events live, in-process.
+                On this deployment's free-tier 0.1 CPU, expect ~1s/event with SHAP reason
+                codes -- vs. the 27ms p99 measured locally on dedicated hardware.
+            </span>
+            {% else %}
+            <span style="color:#748ea8; font-size:0.85rem;">
+                Not available on this deployment (needs the combined Render process -- see DEPLOY_NOTES.md).
+            </span>
+            {% endif %}
         </div>
     </div>
 
