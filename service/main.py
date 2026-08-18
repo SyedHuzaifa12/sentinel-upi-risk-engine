@@ -24,7 +24,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from fastapi import FastAPI  # noqa: E402
+from fastapi import FastAPI, Request  # noqa: E402
 from fastapi.openapi.docs import get_swagger_ui_html  # noqa: E402
 from fastapi.responses import HTMLResponse  # noqa: E402
 
@@ -156,9 +156,17 @@ _DOCS_DARK_CSS = """
 
 
 @app.get("/docs", include_in_schema=False)
-async def custom_swagger_ui_html():
+async def custom_swagger_ui_html(request: Request):
+    # Mirrors FastAPI's own stock /docs route (fastapi.applications.FastAPI.setup):
+    # root_path must be prepended here too, or this 404s as soon as the app is
+    # mounted under a prefix (e.g. render_app.py's Mount("/api", app=fastapi_app))
+    # -- the browser would otherwise fetch "/openapi.json" instead of
+    # "/api/openapi.json". Found live: Swagger UI's own "Failed to load API
+    # definition" error on the deployed site.
+    root_path = request.scope.get("root_path", "").rstrip("/")
+    openapi_url = root_path + app.openapi_url
     swagger_html = get_swagger_ui_html(
-        openapi_url=app.openapi_url,
+        openapi_url=openapi_url,
         title="Sentinel -- Scoring API",
     ).body.decode("utf-8")
     swagger_html = swagger_html.replace("</head>", _DOCS_DARK_CSS + "</head>")

@@ -122,6 +122,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
   display: flex; align-items: center; gap: var(--sp-1); text-decoration: none;
 }
 .nav .brand i { color: var(--accent); }
+.nav .brand .brand-mark { flex-shrink: 0; }
 .nav .nav-links { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }
 .nav a.nav-link { color: var(--text-secondary); text-decoration: none; font-weight: 500; font-size: var(--text-body); }
 .nav a.nav-link:hover { color: var(--text-primary); }
@@ -158,6 +159,12 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .hero-inner { position: relative; max-width: var(--content-width); margin: 0 auto; padding: var(--sp-2) var(--sp-3) 0; }
 .hero h1 { font-size: var(--text-display); line-height: 1.15; margin-bottom: var(--sp-2); max-width: 42rem; }
 .hero .subhead { font-size: var(--text-body-lg); color: var(--text-secondary); max-width: 40rem; margin-bottom: var(--sp-3); }
+/* -- Headline action words, same semantic palette as the badges elsewhere -- */
+.action-word { font-family: var(--font-mono); }
+.action-word.allow { color: var(--allow); }
+.action-word.warn { color: var(--warn); }
+.action-word.review { color: var(--review); }
+.action-word.block { color: var(--block); }
 
 /* -- Cards: 1px border, minimal radius, near-zero shadow -- dark UI uses
    borders, not shadows -- plus a 1px top inset highlight so surfaces read as
