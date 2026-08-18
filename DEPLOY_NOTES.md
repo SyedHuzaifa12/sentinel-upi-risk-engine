@@ -1,5 +1,8 @@
 # Render deployment notes
 
+**LIVE: https://sentinel-upi-risk-engine.onrender.com** (deployed
+successfully 2026-08-19, after the `libgomp1` fix below).
+
 Two deploy targets now exist. **docker-compose.yml / Dockerfile** (postgres,
 redis, api, worker, ui, generator) is untouched and remains the primary
 local-dev target. **Dockerfile.render / render.yaml / render_app.py /
@@ -7,6 +10,50 @@ render_seed.py** are an ADDED second target: a single-process, single-
 container deploy to Render's free tier (512MB RAM, 0.1 CPU, sleeps after
 15 min idle, 750 instance-hours/month, 500 build minutes, no card). Nothing
 in the first target was deleted or modified to build the second.
+
+## Post-deploy fixes (2026-08-19, found from real usage of the live site)
+
+1. **"Replay N events" 500 — root cause was a deterministic generator bug,
+   not memory/timeout.** `ml/src/generator/population.py::build_payees`
+   crashes with `ValueError: low >= high` whenever called with `days <= 1`
+   (the churn-window math produces `window_end < window_start`) — the
+   replay view called `generate(days=1, ...)`, so this fired on literally
+   every click. Found by running the actual replay code path locally
+   rather than theorizing from the traceback alone. Fixed in the generator
+   itself (`days <= 1` is now a defined degenerate case, not a crash) plus
+   the caller now uses `days=3`. Separately hardened regardless: the
+   synchronous view became a background-thread + polling design (25
+   events/click, not 100), wrapped in try/except/finally so any future
+   failure surfaces in a JSON `error` field instead of a bare 500, and
+   SHAP's TreeExplainer construction is now pre-warmed once at startup
+   (`reason_codes.warm_up_explainers()`) instead of happening
+   unpredictably on the first live non-ALLOW decision. See PROGRESS.md's
+   Phase 8 section for full detail; regression test in
+   `ml/tests/test_generator.py`.
+2. **Bank auto-detect fired on `blur` only** — a user who never left the
+   VPA field before submitting saw the stale `OTHER` default even though
+   the suffix WAS correctly mapped. Fixed by also triggering on `input`;
+   expanded the mapping to the additional handles named in the report.
+3. **Reason codes reviewed for actionability**, not just correctness — see
+   PROGRESS.md's Phase 8 section for the specific rewrites.
+4. **Landing page**: banner tone softened (dropped the self-deprecating
+   framing, kept the synthetic-data disclosure itself prominent) and
+   visually redesigned to reuse the app's existing card/pill/icon language
+   instead of a one-off style.
+5. **Full dark-theme redesign + link cleanup** (2026-08-19, supersedes
+   item 4's light-blue pass): every page (landing, monitoring, review
+   queue, sandbox, result) now shares one stylesheet
+   (`backend/users/static/css/design-system.css`) and an identical nav bar;
+   the footer/Results-section links no longer name internal filenames or
+   point at a broken bare `https://github.com/`. FastAPI's `/api/docs` is
+   dark-themed too via a custom `/docs` route in `service/main.py`
+   (`docs_url=None` + a CSS override injected into the stock Swagger HTML)
+   with a "Back to dashboard" link — kept, not removed, as documented
+   technical evidence. No deploy-relevant code changed (no new
+   dependencies, no env vars, no Dockerfile/render.yaml changes) — this is
+   templates/CSS/one FastAPI route only. See PROGRESS.md's Phase 8 section,
+   item 6, for full detail including the icon-name bugs caught before
+   shipping.
 
 ## Architecture: one process, two apps
 

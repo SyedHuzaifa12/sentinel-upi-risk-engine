@@ -1,459 +1,174 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UPI risk analysis · single event sandbox</title>
-    <!-- Poppins font for clean, modern look -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600&display=swap" rel="stylesheet">
-    <!-- Font Awesome 6 (free) for subtle icons -->
+    <title>Sandbox — Sentinel</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>&#128737;</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/design-system.css' %}">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            background: linear-gradient(145deg, #f6f9fc 0%, #e9f0f5 100%);
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 1.5rem;
-            margin: 0;
-            line-height: 1.5;
-            color: #1e293b;
-        }
-
-        .card {
-            max-width: 880px;
-            width: 100%;
-            background: rgba(255,255,255,0.9);
-            backdrop-filter: blur(4px);
-            background: #ffffff;
-            border-radius: 32px;
-            box-shadow:
-                0 20px 35px -8px rgba(0,20,45,0.15),
-                0 4px 8px 0 rgba(0,0,0,0.02),
-                inset 0 1px 1px rgba(255,255,255,0.7);
-            border: 1px solid rgba(255,255,255,0.5);
-            overflow: hidden;
-            transition: all 0.2s ease;
-        }
-
-        .card-header {
-            padding: 2rem 2.5rem 1rem 2.5rem;
-        }
-
-        .card-header h2 {
-            font-weight: 600;
-            font-size: 1.9rem;
-            letter-spacing: -0.02em;
-            background: linear-gradient(135deg, #0b2b4a, #1c4e70);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 0.25rem;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .card-header h2 i {
-            background: #1e4b6e;
-            background: linear-gradient(145deg, #256fa0, #143b57);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            font-size: 2rem;
-        }
-
-        .subhead {
-            color: #4b637a;
-            font-size: 0.95rem;
-            font-weight: 400;
-            margin-top: 6px;
-            border-left: 3px solid #2d7fc1;
-            padding-left: 1rem;
-            background: #f0f7fe;
-            border-radius: 0 20px 20px 0;
-            width: fit-content;
-            padding: 0.5rem 1.2rem;
-            background: linear-gradient(to right, #f0f7ff, transparent);
-        }
-
-        .subhead i {
-            color: #2a72b0;
-            margin-right: 8px;
-            font-size: 0.9rem;
-        }
-
-        .sandbox-note {
-            margin: 0.9rem 0 0 0;
-            font-size: 0.82rem;
-            color: #5b748e;
-            font-style: italic;
-        }
-
-        /* form grid */
-        .form-grid {
-            padding: 1rem 2.5rem 2rem 2.5rem;
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1.25rem 1.8rem;
-        }
-
-        .input-group {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .input-group.full-width {
-            grid-column: span 2;
-        }
-
-        .input-label {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-weight: 500;
-            font-size: 0.9rem;
-            color: #1f3a57;
-            letter-spacing: 0.02em;
-            text-transform: uppercase;
-            font-size: 0.8rem;
-        }
-
-        .input-label i {
-            color: #2c73b1;
-            width: 18px;
-            font-size: 0.95rem;
-        }
-
-        .input-label span {
-            color: #ae3b3b;
-            margin-left: 4px;
-            font-weight: 600;
-        }
-
-        .input-label .prefilled-tag {
-            color: #2a7250;
-            font-weight: 500;
-            text-transform: none;
-            letter-spacing: normal;
-            font-size: 0.72rem;
-            background: #e7f4ec;
-            padding: 0.1rem 0.6rem;
-            border-radius: 20px;
-            margin-left: auto;
-        }
-
-        /* field styling */
-        .field-wrapper {
-            position: relative;
-            display: flex;
-            align-items: center;
-        }
-
-        .field-wrapper i.field-icon {
-            position: absolute;
-            left: 14px;
-            color: #7d95af;
-            font-size: 0.95rem;
-            pointer-events: none;
-            opacity: 0.7;
-        }
-
-        input, select, .field-wrapper input {
-            width: 100%;
-            padding: 0.85rem 1rem 0.85rem 2.8rem;
-            border: 1.5px solid #dde7f0;
-            border-radius: 16px;
-            font-family: 'Inter', sans-serif;
-            font-size: 0.95rem;
-            font-weight: 500;
-            color: #142433;
-            background: #ffffff;
-            transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
-            box-shadow: 0 2px 4px rgba(0,20,40,0.02);
-        }
-
-        input:focus, select:focus {
-            outline: none;
-            border-color: #2979b9;
-            background-color: #fafdff;
-            box-shadow: 0 6px 14px rgba(23, 90, 150, 0.1), 0 0 0 3px rgba(32, 112, 185, 0.15);
-        }
-
-        input[type="number"] {
-            -moz-appearance: textfield;
-        }
-
-        input[type="number"]::-webkit-outer-spin-button,
-        input[type="number"]::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-
-        select {
-            padding-left: 2.8rem;
-            appearance: none;
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%237d95af'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 1rem center;
-        }
-
-        /* hint / suffix styling */
-        .input-hint {
-            font-size: 0.7rem;
-            color: #5b748e;
-            margin-top: 2px;
-            margin-left: 12px;
-        }
-
-        /* action button */
-        .form-actions {
-            grid-column: span 2;
-            display: flex;
-            justify-content: flex-end;
-            margin-top: 20px;
-            border-top: 1px solid #dbe5ef;
-            padding-top: 26px;
-        }
-
-        .btn-primary {
-            background: #0f3d5c;
-            background: linear-gradient(105deg, #164466, #1f5a82);
-            border: none;
-            color: white;
-            font-weight: 600;
-            font-size: 1.05rem;
-            padding: 1rem 3rem;
-            border-radius: 50px;
-            display: inline-flex;
-            align-items: center;
-            gap: 12px;
-            box-shadow: 0 12px 22px -8px rgba(10, 55, 94, 0.4);
-            cursor: pointer;
-            transition: all 0.2s;
-            border: 1px solid rgba(255,255,255,0.2);
-            letter-spacing: 0.3px;
-        }
-
-        .btn-primary i {
-            font-size: 1.2rem;
-        }
-
-        .btn-primary:hover {
-            background: #1a4f73;
-            background: linear-gradient(105deg, #1b5079, #236a98);
-            transform: translateY(-2px);
-            box-shadow: 0 20px 28px -8px rgba(6, 45, 80, 0.5);
-        }
-
-        .btn-primary:active {
-            transform: translateY(2px);
-            box-shadow: 0 10px 16px -6px #0c2f4b;
-        }
-
-        /* csrf token is hidden but preserved */
-        input[name="csrfmiddlewaretoken"] {
-            display: none;
-        }
-
-        /* small badge style for required */
-        .required-badge {
-            background: #e7eef6;
-            color: #1f507b;
-            padding: 3px 8px;
-            border-radius: 50px;
-            font-size: 0.7rem;
-            font-weight: 500;
-            margin-left: 8px;
-        }
-
-        /* responsive */
-        @media (max-width: 680px) {
-            .form-grid {
-                grid-template-columns: 1fr;
-                gap: 1rem;
-                padding: 1rem 1.5rem 1.8rem 1.5rem;
-            }
-            .input-group.full-width {
-                grid-column: span 1;
-            }
-            .form-actions {
-                grid-column: span 1;
-                justify-content: center;
-            }
-            .card-header {
-                padding: 1.5rem 1.5rem 0.5rem 1.5rem;
-            }
-            .btn-primary {
-                width: 100%;
-                justify-content: center;
-            }
-        }
+        .sandbox-note { font-size: var(--text-micro); color: var(--text-tertiary); margin-top: var(--sp-2); }
+        .sandbox-note i { margin-right: 6px; }
+        input, select { font-family: var(--font-mono); }
+        .card .form-grid { padding: 0; margin-top: var(--sp-3); }
+        .required-note { grid-column: span 2; font-size: var(--text-micro); color: var(--text-tertiary); text-align: right; margin-top: -8px; }
+        @media (max-width: 700px) { .required-note { grid-column: span 1; text-align: left; } }
     </style>
 </head>
 <body>
-<div class="card">
-    <div class="card-header">
-        <h2>
-            <i class="fas fa-shield-alt"></i>
-            Single event sandbox
-        </h2>
-        <div class="subhead">
-            <i class="fas fa-microchip"></i>
-            Score one UPI event through the live risk engine
-        </div>
+<nav class="nav">
+    <a href="{% url 'users-home' %}" class="brand"><i class="fas fa-shield-alt"></i>Sentinel</a>
+    <div class="nav-links">
+        <a href="{% url 'monitoring_dashboard' %}" class="nav-link">Monitoring</a>
+        <a href="{% url 'review_queue' %}" class="nav-link">Review queue</a>
+        <a href="{% url 'prediction' %}" class="nav-link active">Sandbox</a>
+        <a href="https://github.com/SyedHuzaifa12/sentinel-upi-risk-engine" class="nav-link"><i class="fab fa-github"></i> View source</a>
+        <a href="{% url 'logout_view' %}" class="btn-cta">Log out</a>
+    </div>
+</nav>
+<div class="container">
+    <div class="card">
+        <h1><i class="fas fa-shield-alt"></i> Single event sandbox</h1>
+        <p>Score one UPI event through the live risk engine.</p>
         <p class="sandbox-note">
             <i class="fas fa-circle-info"></i>
             In production these fields arrive from the payment app; they are editable here for demonstration.
         </p>
-    </div>
 
-    {% if messages %}
-    <div style="margin: 0 2rem 1rem;">
-        {% for message in messages %}
-        <div style="background:#fde7e9; color:#b11f2e; border:1px solid #fbc1c7; border-radius:12px; padding:0.9rem 1.3rem; font-weight:500;">
-            <i class="fas fa-exclamation-circle"></i> {{ message }}
+        {% if messages %}
+        <div class="messages" style="margin-top: var(--sp-2);">
+            {% for message in messages %}
+            <div class="msg {% if message.tags %}{{ message.tags }}{% else %}error{% endif %}">
+                <i class="fas fa-exclamation-circle"></i> {{ message }}
+            </div>
+            {% endfor %}
         </div>
-        {% endfor %}
+        {% endif %}
+
+        <form method="post" action="{% url 'analyze_upi' %}" id="sandbox-form">
+            {% csrf_token %}
+            <div class="form-grid">
+                <div class="input-group">
+                    <div class="input-label">
+                        <i class="fas fa-user"></i> Payer VPA <span class="required-mark">*</span>
+                    </div>
+                    <div class="field-wrapper">
+                        <i class="fas fa-at field-icon"></i>
+                        <input type="text" id="payer_vpa" name="payer_vpa" placeholder="alice@okaxis" required>
+                    </div>
+                    <div class="input-hint">the paying handle, e.g. name@bankhandle</div>
+                </div>
+
+                <div class="input-group">
+                    <div class="input-label">
+                        <i class="fas fa-store"></i> Payee VPA <span class="required-mark">*</span>
+                    </div>
+                    <div class="field-wrapper">
+                        <i class="fas fa-at field-icon"></i>
+                        <input type="text" id="payee_vpa" name="payee_vpa" placeholder="merchant@ybl" required>
+                    </div>
+                    <div class="input-hint">the receiving handle</div>
+                </div>
+
+                <div class="input-group">
+                    <div class="input-label">
+                        <i class="fas fa-coins"></i> Amount <span class="required-mark">*</span>
+                    </div>
+                    <div class="field-wrapper">
+                        <i class="fas fa-rupee-sign field-icon"></i>
+                        <input type="number" step="0.01" min="0.01" name="amount" placeholder="0.00" required>
+                    </div>
+                    <div class="input-hint">transaction value in INR</div>
+                </div>
+
+                <div class="input-group">
+                    <div class="input-label">
+                        <i class="fas fa-right-left"></i> Transaction type <span class="required-mark">*</span>
+                    </div>
+                    <div class="field-wrapper">
+                        <i class="fas fa-arrows-left-right field-icon"></i>
+                        <select name="txn_type" required>
+                            <option value="P2P">P2P — person to person</option>
+                            <option value="P2M">P2M — person to merchant</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="input-group full-width">
+                    <div class="input-label">
+                        <i class="fas fa-qrcode"></i> Initiation mode <span class="required-mark">*</span>
+                    </div>
+                    <div class="field-wrapper">
+                        <i class="fas fa-bolt field-icon"></i>
+                        <select name="initiation_mode" required>
+                            <option value="INTENT">INTENT — app-to-app pay link</option>
+                            <option value="SCAN_QR">SCAN_QR — QR code scan</option>
+                            <option value="COLLECT_REQUEST">COLLECT_REQUEST — payee requests money</option>
+                            <option value="CONTACT">CONTACT — pay a saved contact</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Pre-filled fields: a real payment app supplies these automatically.
+                     Shown and editable for transparency/demo purposes, not blank
+                     required inputs the user has to invent values for. -->
+                <div class="input-group">
+                    <div class="input-label">
+                        <i class="fas fa-landmark"></i> Payer bank <span class="tag">auto-detected</span>
+                    </div>
+                    <div class="field-wrapper">
+                        <i class="fas fa-university field-icon"></i>
+                        <input type="text" id="payer_bank" name="payer_bank" value="OTHER">
+                    </div>
+                    <div class="input-hint">derived from the payer VPA suffix — editable</div>
+                </div>
+
+                <div class="input-group">
+                    <div class="input-label">
+                        <i class="fas fa-landmark"></i> Payee bank <span class="tag">auto-detected</span>
+                    </div>
+                    <div class="field-wrapper">
+                        <i class="fas fa-university field-icon"></i>
+                        <input type="text" id="payee_bank" name="payee_bank" value="OTHER">
+                    </div>
+                    <div class="input-hint">derived from the payee VPA suffix — editable</div>
+                </div>
+
+                <div class="input-group">
+                    <div class="input-label">
+                        <i class="fas fa-calendar-day"></i> Payer account age (days) <span class="tag">default</span>
+                    </div>
+                    <div class="field-wrapper">
+                        <i class="fas fa-hourglass-half field-icon"></i>
+                        <input type="number" min="0" name="payer_account_age_days" value="365">
+                    </div>
+                    <div class="input-hint">how long the payer's account has existed</div>
+                </div>
+
+                <div class="input-group">
+                    <div class="input-label">
+                        <i class="fas fa-mobile-alt"></i> Device id <span class="tag">this session</span>
+                    </div>
+                    <div class="field-wrapper">
+                        <i class="fas fa-fingerprint field-icon"></i>
+                        <input type="text" name="device_id" value="{{ device_id }}">
+                    </div>
+                    <div class="input-hint">stable for this browser session — editable to simulate a new device</div>
+                </div>
+
+                <div class="required-note"><i class="fas fa-asterisk" style="font-size: 8px;"></i> required</div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-calculator"></i> Score transaction <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </form>
     </div>
-    {% endif %}
-
-    <form method="post" action="{% url 'analyze_upi' %}" id="sandbox-form">
-        {% csrf_token %}
-
-        <div class="form-grid">
-            <div class="input-group">
-                <div class="input-label">
-                    <i class="fas fa-user"></i> Payer VPA <span>*</span>
-                </div>
-                <div class="field-wrapper">
-                    <i class="fas fa-at field-icon"></i>
-                    <input type="text" id="payer_vpa" name="payer_vpa" placeholder="alice@okaxis" required>
-                </div>
-                <div class="input-hint">the paying handle, e.g. name@bankhandle</div>
-            </div>
-
-            <div class="input-group">
-                <div class="input-label">
-                    <i class="fas fa-store"></i> Payee VPA <span>*</span>
-                </div>
-                <div class="field-wrapper">
-                    <i class="fas fa-at field-icon"></i>
-                    <input type="text" id="payee_vpa" name="payee_vpa" placeholder="merchant@ybl" required>
-                </div>
-                <div class="input-hint">the receiving handle</div>
-            </div>
-
-            <div class="input-group">
-                <div class="input-label">
-                    <i class="fas fa-coins"></i> Amount <span>*</span>
-                </div>
-                <div class="field-wrapper">
-                    <i class="fas fa-rupee-sign field-icon"></i>
-                    <input type="number" step="0.01" min="0.01" name="amount" placeholder="0.00" required>
-                </div>
-                <div class="input-hint">transaction value in INR</div>
-            </div>
-
-            <div class="input-group">
-                <div class="input-label">
-                    <i class="fas fa-right-left"></i> Transaction type <span>*</span>
-                </div>
-                <div class="field-wrapper">
-                    <i class="fas fa-arrows-left-right field-icon"></i>
-                    <select name="txn_type" required>
-                        <option value="P2P">P2P — person to person</option>
-                        <option value="P2M">P2M — person to merchant</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="input-group full-width">
-                <div class="input-label">
-                    <i class="fas fa-qrcode"></i> Initiation mode <span>*</span>
-                </div>
-                <div class="field-wrapper">
-                    <i class="fas fa-bolt field-icon"></i>
-                    <select name="initiation_mode" required>
-                        <option value="INTENT">INTENT — app-to-app pay link</option>
-                        <option value="SCAN_QR">SCAN_QR — QR code scan</option>
-                        <option value="COLLECT_REQUEST">COLLECT_REQUEST — payee requests money</option>
-                        <option value="CONTACT">CONTACT — pay a saved contact</option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- Pre-filled fields: a real payment app supplies these automatically.
-                 Shown and editable for transparency/demo purposes, not blank
-                 required inputs the user has to invent values for. -->
-            <div class="input-group">
-                <div class="input-label">
-                    <i class="fas fa-building-columns"></i> Payer bank <span class="prefilled-tag">auto-detected</span>
-                </div>
-                <div class="field-wrapper">
-                    <i class="fas fa-university field-icon"></i>
-                    <input type="text" id="payer_bank" name="payer_bank" value="OTHER">
-                </div>
-                <div class="input-hint">derived from the payer VPA suffix — editable</div>
-            </div>
-
-            <div class="input-group">
-                <div class="input-label">
-                    <i class="fas fa-building-columns"></i> Payee bank <span class="prefilled-tag">auto-detected</span>
-                </div>
-                <div class="field-wrapper">
-                    <i class="fas fa-university field-icon"></i>
-                    <input type="text" id="payee_bank" name="payee_bank" value="OTHER">
-                </div>
-                <div class="input-hint">derived from the payee VPA suffix — editable</div>
-            </div>
-
-            <div class="input-group">
-                <div class="input-label">
-                    <i class="fas fa-calendar-day"></i> Payer account age (days) <span class="prefilled-tag">default</span>
-                </div>
-                <div class="field-wrapper">
-                    <i class="fas fa-hourglass-half field-icon"></i>
-                    <input type="number" min="0" name="payer_account_age_days" value="365">
-                </div>
-                <div class="input-hint">how long the payer's account has existed</div>
-            </div>
-
-            <div class="input-group">
-                <div class="input-label">
-                    <i class="fas fa-mobile-screen"></i> Device id <span class="prefilled-tag">this session</span>
-                </div>
-                <div class="field-wrapper">
-                    <i class="fas fa-fingerprint field-icon"></i>
-                    <input type="text" name="device_id" value="{{ device_id }}">
-                </div>
-                <div class="input-hint">stable for this browser session — editable to simulate a new device</div>
-            </div>
-
-            <div class="form-actions">
-                <button type="submit" class="btn-primary">
-                    <i class="fas fa-calculator"></i> Score transaction
-                    <i class="fas fa-arrow-right" style="font-size: 1rem;"></i>
-                </button>
-            </div>
-
-            <div class="full-width" style="grid-column: span 2; margin-top: 0px; font-size:0.8rem; color:#4e6e8c; text-align: right; padding-right: 10px;">
-                <i class="fas fa-asterisk" style="color:#b22222; font-size: 0.5rem;"></i> required
-            </div>
-        </div>
-    </form>
-    <div style="height: 6px; background: linear-gradient(90deg, #cddbe8, #b0c8dd, #cddbe8); width: 100%; opacity: 0.4;"></div>
 </div>
 
 <script>
@@ -461,9 +176,17 @@
         // Derives payer/payee bank from the VPA handle suffix -- a small
         // convenience so the sandbox doesn't ask the user to know or invent
         // a bank code. Always overridable by typing directly into the field.
+        // Covers the common real Indian UPI handle suffixes (2026-08-19,
+        // expanded after a live bug report that okaxis/ybl resolved to
+        // OTHER): Google Pay (okaxis/okicici/oksbi/okhdfcbank), PhonePe
+        // (ybl/ibl/axl), Paytm, Amazon Pay (apl), Jupiter (jupiteraxis),
+        // BHIM/NPCI's own generic handle (upi), and the major banks' own
+        // direct handles (sbi/hdfcbank/icici/kotak/fbl).
         const BANK_SUFFIXES = {
             'okaxis': 'AXIS', 'okhdfcbank': 'HDFC', 'oksbi': 'SBI', 'okicici': 'ICICI',
             'ybl': 'YES', 'ibl': 'IDBI', 'axl': 'AXIS', 'paytm': 'PAYTM',
+            'upi': 'NPCI', 'apl': 'AXIS', 'jupiteraxis': 'AXIS', 'fbl': 'FEDERAL',
+            'sbi': 'SBI', 'hdfcbank': 'HDFC', 'icici': 'ICICI', 'kotak': 'KOTAK',
         };
 
         function deriveBank(vpa) {
@@ -479,16 +202,24 @@
             let bankEditedManually = false;
 
             bankField.addEventListener('input', function() { bankEditedManually = true; });
-            vpaField.addEventListener('blur', function() {
+            // Both 'input' (live, as the user types) and 'blur' (covers
+            // paste-then-tab and autofill, where 'input' can fire before
+            // the field's value has settled in some browsers) -- relying
+            // on blur alone meant a user who submitted without ever
+            // leaving the VPA field could see a stale OTHER.
+            function update() {
                 if (bankEditedManually) return;
                 const derived = deriveBank(vpaField.value.trim());
                 if (derived) bankField.value = derived;
-            });
+            }
+            vpaField.addEventListener('input', update);
+            vpaField.addEventListener('blur', update);
         }
 
         wireAutoDetect('payer_vpa', 'payer_bank');
         wireAutoDetect('payee_vpa', 'payee_bank');
     })();
 </script>
+<script src="{% static 'js/design-system.js' %}"></script>
 </body>
 </html>

@@ -25,6 +25,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from fastapi import FastAPI  # noqa: E402
+from fastapi.openapi.docs import get_swagger_ui_html  # noqa: E402
+from fastapi.responses import HTMLResponse  # noqa: E402
 
 from feature_lib.registry import ALL_FEATURES, COLD_FEATURES  # noqa: E402
 from ml.src.utils.paths import METRICS_V2_PATH, THRESHOLDS_PATH  # noqa: E402
@@ -107,5 +109,61 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="Sentinel UPI Risk Engine -- scoring service", lifespan=lifespan)
+app = FastAPI(title="Sentinel -- Scoring API", lifespan=lifespan, docs_url=None)
 app.include_router(router)
+
+# Dark-themed /docs matching the dashboard's design tokens (background,
+# surfaces, borders, mono font, indigo accent) -- swagger_ui_parameters only
+# controls UI behavior (try-it-out, syntax theme), not page colors, so the
+# tokens are injected as a plain CSS override on top of the stock Swagger UI.
+_DOCS_DARK_CSS = """
+<style>
+  :root { color-scheme: dark; }
+  body { background: #0A0C10 !important; }
+  .swagger-ui, .swagger-ui .info .title, .swagger-ui .scheme-container { background: transparent; }
+  .swagger-ui .topbar { display: none; }
+  .swagger-ui, .swagger-ui p, .swagger-ui li, .swagger-ui table { color: #E8EAED; }
+  .swagger-ui .info .title, .swagger-ui .opblock-summary-description { color: #E8EAED; }
+  .swagger-ui .info a { color: #6366F1; }
+  .swagger-ui .scheme-container { background: #12151C; box-shadow: none; border-bottom: 1px solid #1F2430; }
+  .swagger-ui .opblock { background: #12151C; border-color: #1F2430; }
+  .swagger-ui .opblock .opblock-summary { border-color: #1F2430; }
+  .swagger-ui .opblock-tag { color: #E8EAED; border-color: #1F2430; }
+  .swagger-ui .opblock.opblock-get { background: #12151C; border-color: #1F2430; }
+  .swagger-ui .opblock.opblock-get .opblock-summary-method { background: #6366F1; }
+  .swagger-ui .opblock.opblock-post .opblock-summary-method { background: #6366F1; }
+  .swagger-ui section.models, .swagger-ui .model-box, .swagger-ui .model {
+    background: #12151C; border-color: #1F2430; color: #9AA0AC;
+  }
+  .swagger-ui .btn { background: #171B24; color: #E8EAED; border-color: #2A3040; }
+  .swagger-ui .btn.execute { background: #6366F1; border-color: #6366F1; color: #fff; }
+  .swagger-ui select, .swagger-ui input, .swagger-ui textarea {
+    background: #171B24; color: #E8EAED; border-color: #1F2430;
+  }
+  .swagger-ui table thead tr td, .swagger-ui table thead tr th { color: #6B7280; border-color: #1F2430; }
+  .swagger-ui .response-col_status { color: #9AA0AC; }
+  .swagger-ui .microlight, .swagger-ui .highlight-code { background: #171B24 !important; }
+  .swagger-ui, .swagger-ui input, .swagger-ui select, .swagger-ui textarea,
+  code, pre, .microlight { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace !important; }
+  #sentinel-docs-nav {
+    font-family: 'Inter', system-ui, sans-serif; padding: 16px 24px; background: #0A0C10;
+    border-bottom: 1px solid #1F2430;
+  }
+  #sentinel-docs-nav a { color: #9AA0AC; text-decoration: none; font-size: 14px; }
+  #sentinel-docs-nav a:hover { color: #E8EAED; }
+</style>
+"""
+
+
+@app.get("/docs", include_in_schema=False)
+async def custom_swagger_ui_html():
+    swagger_html = get_swagger_ui_html(
+        openapi_url=app.openapi_url,
+        title="Sentinel -- Scoring API",
+    ).body.decode("utf-8")
+    swagger_html = swagger_html.replace("</head>", _DOCS_DARK_CSS + "</head>")
+    swagger_html = swagger_html.replace(
+        "<body>",
+        '<body><div id="sentinel-docs-nav"><a href="/"><i>&larr;</i> Back to dashboard</a></div>',
+    )
+    return HTMLResponse(swagger_html)

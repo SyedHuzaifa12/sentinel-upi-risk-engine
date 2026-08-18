@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,91 +6,40 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Real-time UPI transaction risk scoring -- allow/warn/review/block, decided before the money moves. Synthetic-data portfolio project.">
     <title>Sentinel UPI Risk Engine</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>&#128737;</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/design-system.css' %}">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Inter', system-ui, sans-serif;
-            background: linear-gradient(160deg, #f4f9ff 0%, #e8f0f8 100%);
-            color: #1c3144; line-height: 1.6;
+        .flow-arrow-row { display: flex; justify-content: center; gap: var(--sp-1); color: var(--text-tertiary); height: 24px; align-items: center; }
+        .results-list td:first-child { display: flex; align-items: center; gap: var(--sp-1); }
+        .row-icon {
+            width: 30px; height: 30px; border-radius: 50%; background: var(--surface-raised); color: var(--accent);
+            display: inline-flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; border: 1px solid var(--border);
         }
-        .container { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
-        .card {
-            background: #fff; border-radius: 1.8rem; padding: 2rem 2.2rem;
-            box-shadow: 0 20px 40px -20px rgba(8,40,70,0.25); margin-bottom: 1.5rem;
-        }
-        .nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
-        .brand { font-size: 1.3rem; font-weight: 800; color: #123653; }
-        .nav a {
-            color: #164466; text-decoration: none; font-weight: 600; font-size: 0.9rem;
-            margin-left: 1.2rem;
-        }
-        .nav a.cta { background: #164466; color: white; padding: 0.5rem 1.1rem; border-radius: 8px; }
-        h1 { font-size: 2.2rem; font-weight: 800; color: #123653; margin-bottom: 0.6rem; line-height: 1.25; }
-        h2 { font-size: 1.3rem; font-weight: 700; color: #123653; margin-bottom: 0.9rem; }
-        .pitch { font-size: 1.1rem; color: #3a5878; margin-bottom: 1rem; }
-        .synthetic-banner {
-            background: #fff3e0; border: 1.5px solid #ffcc80; border-radius: 1rem;
-            padding: 0.9rem 1.3rem; font-size: 0.9rem; color: #7a4a00; display: flex;
-            gap: 10px; align-items: flex-start; margin-top: 1rem;
-        }
-        .synthetic-banner i { color: #e07800; margin-top: 2px; }
-        .cta-row { display: flex; gap: 0.9rem; flex-wrap: wrap; margin-top: 1.3rem; }
-        .cta-row a {
-            padding: 0.7rem 1.3rem; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 0.92rem;
-        }
-        .cta-primary { background: #164466; color: white; }
-        .cta-secondary { background: #ecf3fa; color: #164466; }
-        .flow { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin: 1rem 0; font-size: 0.82rem; }
-        .flow-box {
-            background: #ecf3fa; border: 1px solid #c9ddef; border-radius: 8px;
-            padding: 0.55rem 0.8rem; color: #164466; font-weight: 600; white-space: nowrap;
-        }
-        .flow-arrow { color: #7d95af; }
-        .flow-lib {
-            background: #164466; color: white; border-radius: 8px; padding: 0.55rem 0.9rem;
-            font-weight: 700; white-space: nowrap;
-        }
-        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-top: 0.5rem; }
-        th {
-            background: #f2f8ff; color: #0f3b5c; font-weight: 600; font-size: 0.78rem;
-            text-transform: uppercase; letter-spacing: 0.02em; padding: 0.7rem 0.6rem;
-            border-bottom: 2px solid #c9ddef; text-align: left;
-        }
-        td { padding: 0.6rem 0.6rem; border-bottom: 1px solid #e6eef7; }
-        .links-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 0.8rem; }
-        @media (max-width: 700px) { .links-grid { grid-template-columns: 1fr; } }
-        .link-card {
-            background: #ecf3fa; border-radius: 1rem; padding: 1.1rem 1.3rem; text-decoration: none;
-            color: #123653; display: block;
-        }
-        .link-card i { color: #164466; margin-right: 8px; }
-        .link-card .desc { color: #4d6a86; font-size: 0.85rem; margin-top: 0.3rem; }
-        footer { text-align: center; color: #7d95af; font-size: 0.85rem; padding: 1.5rem 0; }
-        footer a { color: #164466; }
     </style>
 </head>
 <body>
-<div class="container">
-    <div class="nav">
-        <div class="brand"><i class="fas fa-shield-halved"></i> Sentinel UPI Risk Engine</div>
-        <div>
+<div class="hero">
+    <nav class="nav">
+        <a href="{% url 'users-home' %}" class="brand"><i class="fas fa-shield-alt"></i>Sentinel UPI Risk Engine</a>
+        <div class="nav-links">
             {% if user.is_authenticated %}
-                <a href="{% url 'monitoring_dashboard' %}">Monitoring</a>
-                <a href="{% url 'review_queue' %}">Review queue</a>
-                <a href="{% url 'prediction' %}">Sandbox</a>
-                <a href="{% url 'logout_view' %}" class="cta">Log out</a>
+                <a href="{% url 'monitoring_dashboard' %}" class="nav-link">Monitoring</a>
+                <a href="{% url 'review_queue' %}" class="nav-link">Review queue</a>
+                <a href="{% url 'prediction' %}" class="nav-link">Sandbox</a>
+                <a href="https://github.com/SyedHuzaifa12/sentinel-upi-risk-engine" class="nav-link"><i class="fab fa-github"></i> View source</a>
+                <a href="{% url 'logout_view' %}" class="btn-cta">Log out</a>
             {% else %}
-                <a href="{% url 'login' %}">Log in</a>
-                <a href="{% url 'users-register' %}" class="cta">Sign up</a>
+                <a href="https://github.com/SyedHuzaifa12/sentinel-upi-risk-engine" class="nav-link"><i class="fab fa-github"></i> View source</a>
+                <a href="{% url 'login' %}" class="nav-link">Log in</a>
+                <a href="{% url 'users-register' %}" class="btn-cta">Sign up</a>
             {% endif %}
         </div>
-    </div>
-
-    <div class="card">
+    </nav>
+    <div class="hero-inner">
         <h1>Real-time UPI transaction risk scoring — allow / warn / review / block, decided before the money moves.</h1>
-        <p class="pitch">
+        <p class="subhead">
             UPI fraud is overwhelmingly Authorised Push Payment fraud — the victim is
             socially engineered and willingly authorises the payment, so device, PIN,
             and location are all genuine. Detection has to come from payee-side
@@ -97,90 +47,133 @@
             deviation (first-ever payment to this VPA, amount z-score, collect-request
             initiation) — not credential verification.
         </p>
-        <div class="synthetic-banner">
+        <div class="callout">
             <i class="fas fa-triangle-exclamation"></i>
             <div>
-                <strong>All data here is synthetic.</strong> This is a systems/ML
-                engineering portfolio project, not a production fraud model — real
-                payment-fraud systems typically land at PR-AUC 0.3–0.7, not the 0.8455
-                measured here. Full honest breakdown in the README.
+                <strong>All data here is synthetic.</strong> Fraud typologies are
+                encoded by a generator, not observed — see Results below and the
+                <a href="https://github.com/SyedHuzaifa12/sentinel-upi-risk-engine">repository</a>
+                for what that means for the metrics.
             </div>
         </div>
         <div class="cta-row">
-            <a href="{% url 'prediction' %}" class="cta-primary"><i class="fas fa-flask"></i> Try the sandbox</a>
-            <a href="{% url 'monitoring_dashboard' %}" class="cta-secondary"><i class="fas fa-chart-line"></i> View live dashboard</a>
-            <a href="/api/docs" class="cta-secondary"><i class="fas fa-code"></i> API docs</a>
+            <a href="{% url 'prediction' %}" class="btn btn-primary btn-hero-cta"><i class="fas fa-flask"></i> Try the sandbox</a>
+            <a href="{% url 'monitoring_dashboard' %}" class="btn btn-secondary"><i class="fas fa-chart-line"></i> View live dashboard</a>
+            <a href="/api/docs" class="btn btn-secondary"><i class="fas fa-code"></i> API docs</a>
         </div>
     </div>
+</div>
 
-    <div class="card">
-        <h2>How it works</h2>
-        <div class="flow">
-            <div class="flow-box">Raw event</div>
-            <span class="flow-arrow">&rarr;</span>
-            <div class="flow-lib">feature_lib (1 impl, 3 call sites)</div>
-            <span class="flow-arrow">&rarr;</span>
-            <div class="flow-box">cold/warm LightGBM</div>
-            <span class="flow-arrow">&rarr;</span>
-            <div class="flow-box">isotonic calibration</div>
-            <span class="flow-arrow">&rarr;</span>
-            <div class="flow-box">cost-based decision</div>
-            <span class="flow-arrow">&rarr;</span>
-            <div class="flow-box">append-only decision log</div>
+<div class="container">
+    <div class="card card-first">
+        <h2><span class="h2-icon"><i class="fas fa-diagram-project"></i></span> How it works</h2>
+        <div class="flow-diagram">
+            <div class="flow-row">
+                <div class="flow-node"><i class="fas fa-satellite-dish"></i> generator</div>
+                <div class="flow-node"><i class="fas fa-bolt"></i> Redis Stream</div>
+                <div class="flow-node"><i class="fas fa-gears"></i> worker</div>
+                <div class="flow-node"><i class="fas fa-flask"></i> sandbox / API caller</div>
+            </div>
+            <div class="flow-arrow-row"><i class="fas fa-arrow-down"></i><i class="fas fa-arrow-down"></i><i class="fas fa-arrow-down"></i><i class="fas fa-arrow-down"></i></div>
+            <div class="flow-row">
+                <div class="flow-node hub">feature_lib<small>ONE implementation, 3 call sites</small></div>
+            </div>
+            <div class="flow-arrow-row"><i class="fas fa-arrow-down"></i></div>
+            <div class="flow-row">
+                <div class="flow-node">cold / warm LightGBM</div>
+                <div class="flow-node">isotonic calibration</div>
+                <div class="flow-node">cost-based decision</div>
+            </div>
+            <div class="flow-arrow-row"><i class="fas fa-arrow-down"></i></div>
+            <div class="flow-row">
+                <div class="flow-node output"><i class="fas fa-lock"></i> append-only decision log</div>
+            </div>
+            <div class="flow-arrow-row"><i class="fas fa-arrow-down"></i><i class="fas fa-arrow-down"></i><i class="fas fa-arrow-down"></i></div>
+            <div class="flow-row">
+                <div class="flow-node">review queue</div>
+                <div class="flow-node">monitoring dashboard</div>
+                <div class="flow-node">backtest harness</div>
+            </div>
         </div>
-        <p style="color:#4d6a86; font-size:0.92rem;">
+        <p>
             Features are computed server-side from each payer/payee/device's own
             transaction history, never supplied by the caller. Point-in-time
             correctness is enforced at the history-store layer. A payee with fewer
-            than 3 prior transactions routes to the stricter <strong>cold</strong>
-            model; otherwise <strong>warm</strong>. Every decision gets a calibrated
+            than 3 prior transactions routes to the stricter <strong style="color:var(--text-primary)">cold</strong>
+            model; otherwise <strong style="color:var(--text-primary)">warm</strong>. Every decision gets a calibrated
             probability, a cost-minimizing action, and — for anything above ALLOW —
             per-transaction SHAP reason codes, never hardcoded explanation text.
         </p>
     </div>
 
     <div class="card">
-        <h2>Results, honest</h2>
-        <table>
-            <tr><td>Combined PR-AUC (cold+warm)</td><td><strong>0.8455</strong></td></tr>
-            <tr><td>— warm-only</td><td>0.8385</td></tr>
-            <tr><td>— cold-only</td><td>0.9111 [95% CI 0.79–1.00, n=22 test positives — wide, small sample]</td></tr>
-            <tr><td>Rules-baseline PR-AUC (sanity floor)</td><td>0.1136</td></tr>
-            <tr><td>p99 scoring latency (measured locally, dedicated hardware)</td><td>27.32ms</td></tr>
+        <h2><span class="h2-icon"><i class="fas fa-chart-line"></i></span> Results, honest</h2>
+        <table class="data-table results-list">
+            <tr>
+                <td><span class="row-icon"><i class="fas fa-bullseye"></i></span> Combined PR-AUC (cold+warm)</td>
+                <td class="num mono">0.8455</td>
+            </tr>
+            <tr>
+                <td><span class="row-icon"><i class="fas fa-temperature-half"></i></span> — warm-only</td>
+                <td class="num mono">0.8385</td>
+            </tr>
+            <tr>
+                <td><span class="row-icon"><i class="fas fa-snowflake"></i></span> — cold-only</td>
+                <td class="num mono">0.9111 <span class="text-tertiary" style="font-weight:400;">[95% CI 0.79–1.00, n=22]</span></td>
+            </tr>
+            <tr>
+                <td><span class="row-icon"><i class="fas fa-ruler"></i></span> Rules-baseline PR-AUC (sanity floor)</td>
+                <td class="num mono">0.1136</td>
+            </tr>
+            <tr>
+                <td><span class="row-icon"><i class="fas fa-gauge-high"></i></span> p99 scoring latency (local, dedicated hardware)</td>
+                <td class="num mono">27.32ms</td>
+            </tr>
         </table>
-        <p style="color:#4d6a86; font-size:0.85rem; margin-top:0.8rem;">
-            Full metrics, the threshold-vs-net-benefit curve, and what would be done
-            differently with real data are in the
-            <a href="https://github.com" style="color:#164466;">README</a> and
-            <code>DESIGN.md</code>.
+        <p style="margin-top: var(--sp-2); font-size: var(--text-micro);">
+            Full metrics, the threshold-vs-net-benefit curve, and what a real-data
+            version would change are documented in the
+            <a href="https://github.com/SyedHuzaifa12/sentinel-upi-risk-engine">repository</a>.
         </p>
     </div>
 
     <div class="card">
-        <h2>Explore the system</h2>
+        <h2><span class="h2-icon"><i class="fas fa-compass"></i></span> Explore the system</h2>
         <div class="links-grid">
             <a href="{% url 'prediction' %}" class="link-card">
-                <div><i class="fas fa-flask"></i> Sandbox</div>
+                <div class="title-row">
+                    <span class="icon-badge"><i class="fas fa-flask"></i></span> Sandbox
+                    <span class="pill-tag" style="margin-left:auto;">Live</span>
+                </div>
                 <div class="desc">Score a transaction by hand and see the decision + reason codes.</div>
             </a>
             <a href="{% url 'monitoring_dashboard' %}" class="link-card">
-                <div><i class="fas fa-chart-line"></i> Monitoring dashboard</div>
+                <div class="title-row">
+                    <span class="icon-badge"><i class="fas fa-chart-line"></i></span> Monitoring dashboard
+                    <span class="pill-tag" style="margin-left:auto;">Live</span>
+                </div>
                 <div class="desc">Live alert rate, latency, drift, and review-queue health.</div>
             </a>
             <a href="{% url 'review_queue' %}" class="link-card">
-                <div><i class="fas fa-magnifying-glass"></i> Analyst review queue</div>
+                <div class="title-row">
+                    <span class="icon-badge"><i class="fas fa-magnifying-glass"></i></span> Analyst review queue
+                    <span class="pill-tag" style="margin-left:auto;">Live</span>
+                </div>
                 <div class="desc">Label alerted decisions as confirmed fraud, legit, or unclear.</div>
             </a>
             <a href="/api/docs" class="link-card">
-                <div><i class="fas fa-code"></i> API docs</div>
+                <div class="title-row">
+                    <span class="icon-badge"><i class="fas fa-code"></i></span> API docs
+                    <span class="pill-tag" style="margin-left:auto;">Live</span>
+                </div>
                 <div class="desc">The FastAPI scoring service's interactive OpenAPI docs.</div>
             </a>
         </div>
     </div>
 </div>
 <footer>
-    Sentinel UPI Risk Engine — synthetic-data portfolio project. Deployed on Render's free tier;
-    see <code>DEPLOY_NOTES.md</code> for how.
+    Sentinel UPI Risk Engine · synthetic-data engineering project · running on a free-tier instance
 </footer>
+<script src="{% static 'js/design-system.js' %}"></script>
 </body>
 </html>

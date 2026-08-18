@@ -55,6 +55,19 @@ from service.main import lifespan as fastapi_lifespan  # noqa: E402
 @asynccontextmanager
 async def combined_lifespan(_app):
     async with fastapi_lifespan(fastapi_app):
+        # Warm up SHAP's TreeExplainers HERE, once, at startup -- not lazily
+        # on first use. Found via a live 500 (2026-08-19): the monitoring
+        # dashboard's "Replay" button reliably hits a non-ALLOW decision
+        # within its first few events, which was the first time THIS
+        # process ever constructed a TreeExplainer -- an unpredictable,
+        # real memory/CPU spike happening mid-request instead of during
+        # startup, where it's visible in the logs and doesn't cost a user
+        # a broken click. Import deferred to here (not module level) for
+        # the same reason pipelines/backtest.py defers heavy imports --
+        # this line only needs to run once, not be paid at every import of
+        # this file (e.g. by tests).
+        from ml.src.policy.reason_codes import warm_up_explainers
+        warm_up_explainers()
         yield
 
 

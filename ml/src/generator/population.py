@@ -210,6 +210,14 @@ def build_payees(rng, n_payees, days, used_vpas, churn_fraction=0.20):
     Coverage across the 90 days is stratified (a minimum count per rolling
     ~10-day window), not left to pure chance, so the churn guarantee holds
     deterministically for any seed rather than merely "usually."
+
+    `days <= 1` is degenerate for churn staggering -- there is no day 1+ to
+    place a churned payee into, so every payee is just made "initial"
+    (created_day=0) instead. Without this, the window math below produces
+    `window_end = min(days - 1, ...) = 0 < window_start = 1`, and
+    `rng.integers(1, days, ...)` becomes `rng.integers(1, 1, ...)` --
+    numpy's `ValueError: low >= high`, deterministically, on every call
+    (found 2026-08-19 via a live 500 on a caller that passed days=1).
     """
     n_churned = int(round(n_payees * churn_fraction))
     n_initial = n_payees - n_churned
@@ -217,6 +225,11 @@ def build_payees(rng, n_payees, days, used_vpas, churn_fraction=0.20):
     payees = []
     for payee_id in range(n_initial):
         payees.append(_make_payee(rng, payee_id, used_vpas, created_day=0))
+
+    if days <= 1:
+        for offset in range(n_churned):
+            payees.append(_make_payee(rng, n_initial + offset, used_vpas, created_day=0))
+        return payees
 
     # Stratify the churned payees across 10-day windows spanning days 1..days-1.
     # Ceiling division (not floor) so the final, possibly-partial window at the

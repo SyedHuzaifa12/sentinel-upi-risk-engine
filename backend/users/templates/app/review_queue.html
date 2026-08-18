@@ -1,88 +1,71 @@
+{% load static %}
+{% load currency_filters %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analyst review queue</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>Review queue — Sentinel</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>&#128737;</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/design-system.css' %}">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Inter', system-ui, sans-serif;
-            background: linear-gradient(160deg, #f4f9ff 0%, #e8f0f8 100%);
-            min-height: 100vh; padding: 2rem 1.5rem; color: #1c3144; line-height: 1.5;
+        .reason-list { list-style: none; font-size: var(--text-micro); color: var(--text-secondary); }
+        .reason-list li { padding: 2px 0; }
+        .vpa-line { font-family: var(--font-mono); font-size: 13px; }
+        .vpa-line .arrow { color: var(--text-tertiary); }
+        form.label-form { display: flex; gap: var(--sp-1); flex-wrap: wrap; align-items: center; }
+        form.label-form select, form.label-form input[type="text"] {
+            border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px;
+            font-size: 13px; background: var(--surface); color: var(--text-primary); font-family: var(--font-sans);
         }
-        .container { max-width: 1300px; margin: 0 auto; }
-        .card {
-            background: #fff; border-radius: 1.8rem; padding: 1.8rem 2rem;
-            box-shadow: 0 20px 40px -20px rgba(8,40,70,0.25); margin-bottom: 1.5rem;
-        }
-        h1 { font-size: 1.8rem; font-weight: 700; color: #123653; margin-bottom: 0.5rem; }
-        .caveat {
-            background: #fff3e0; border: 1.5px solid #ffcc80; border-radius: 1rem;
-            padding: 1rem 1.4rem; margin-top: 1rem; font-size: 0.92rem; color: #7a4a00;
-            display: flex; gap: 12px; align-items: flex-start;
-        }
-        .caveat i { color: #e07800; font-size: 1.2rem; margin-top: 2px; }
-        .stats-row { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-top: 1.2rem; }
-        .stat { background: #ecf3fa; border-radius: 1rem; padding: 0.8rem 1.4rem; min-width: 160px; }
-        .stat .label { font-size: 0.75rem; text-transform: uppercase; color: #4d6a86; letter-spacing: 0.03em; }
-        .stat .value { font-size: 1.5rem; font-weight: 700; color: #123653; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-        th {
-            background: #f2f8ff; color: #0f3b5c; font-weight: 600; font-size: 0.78rem;
-            text-transform: uppercase; letter-spacing: 0.02em; padding: 0.9rem 0.7rem;
-            border-bottom: 2px solid #c9ddef; text-align: left;
-        }
-        td { padding: 0.85rem 0.7rem; border-bottom: 1px solid #e6eef7; vertical-align: top; }
-        .badge { display: inline-block; padding: 0.25rem 0.9rem; border-radius: 30px; font-weight: 600; font-size: 0.75rem; }
-        .badge-block { background: #fde7e9; color: #b11f2e; }
-        .badge-review { background: #fff0e0; color: #b05a1f; }
-        .reason-list { font-size: 0.8rem; color: #4d6a86; margin-top: 0.3rem; }
-        .reason-list li { margin-bottom: 2px; }
-        form.label-form { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
-        select, input[type="text"] {
-            border: 1px solid #cbdae9; border-radius: 8px; padding: 0.4rem 0.6rem; font-size: 0.82rem;
-        }
+        form.label-form input[type="text"] { width: 110px; }
         button.label-btn {
-            background: #164466; color: white; border: none; border-radius: 8px;
-            padding: 0.45rem 0.9rem; font-size: 0.82rem; cursor: pointer; font-weight: 600;
+            background: var(--accent); color: #fff; border: none; border-radius: 8px;
+            padding: 7px 14px; font-size: 13px; cursor: pointer; font-weight: 600;
         }
-        button.label-btn:hover { background: #1f5a82; }
-        .pagination { margin-top: 1rem; display: flex; gap: 0.5rem; }
-        .pagination a { padding: 0.4rem 0.9rem; border-radius: 8px; background: #ecf3fa; color: #164466; text-decoration: none; }
-        .messages { margin-bottom: 1rem; }
-        .messages .msg { padding: 0.7rem 1.1rem; border-radius: 0.8rem; margin-bottom: 0.5rem; font-size: 0.9rem; }
-        .msg.success { background: #e2f3e8; color: #1a6e3b; }
-        .msg.error { background: #fde7e9; color: #b11f2e; }
+        button.label-btn:hover { background: var(--accent-hover); }
+        .pagination { margin-top: var(--sp-3); display: flex; gap: var(--sp-1); align-items: center; }
+        .pagination a { padding: 6px 14px; border-radius: 8px; background: var(--surface-raised); color: var(--text-primary); text-decoration: none; border: 1px solid var(--border); font-size: 13px; }
+        .pagination a:hover { border-color: var(--accent); }
+        .pagination .page-info { font-size: 13px; color: var(--text-tertiary); padding: 0 var(--sp-1); }
     </style>
 </head>
 <body>
+<nav class="nav">
+    <a href="{% url 'users-home' %}" class="brand"><i class="fas fa-shield-alt"></i>Sentinel</a>
+    <div class="nav-links">
+        <a href="{% url 'monitoring_dashboard' %}" class="nav-link">Monitoring</a>
+        <a href="{% url 'review_queue' %}" class="nav-link active">Review queue</a>
+        <a href="{% url 'prediction' %}" class="nav-link">Sandbox</a>
+        <a href="https://github.com/SyedHuzaifa12/sentinel-upi-risk-engine" class="nav-link"><i class="fab fa-github"></i> View source</a>
+        <a href="{% url 'logout_view' %}" class="btn-cta">Log out</a>
+    </div>
+</nav>
 <div class="container">
     <div class="card">
         <h1><i class="fas fa-magnifying-glass"></i> Analyst review queue</h1>
-        <p style="color:#4d6a86;">Decisions with action REVIEW or BLOCK, newest first.</p>
+        <p>Decisions with action REVIEW or BLOCK, newest first.</p>
 
-        <div class="caveat">
+        <div class="callout">
             <i class="fas fa-triangle-exclamation"></i>
             <div>
                 <strong>Selective labelling bias:</strong> only alerted transactions (REVIEW/BLOCK)
                 ever reach this queue, so "precision on reviewed cases" below is <em>not</em> the
                 model's true precision — it says nothing about fraud that was never flagged (false
-                negatives in the ALLOW tier) or about the ALLOW tier's real error rate. See
-                <code>DESIGN.md</code> for the full explanation. Do not report this number as
-                overall model precision.
+                negatives in the ALLOW tier) or about the ALLOW tier's real error rate. See the
+                <a href="https://github.com/SyedHuzaifa12/sentinel-upi-risk-engine">repository docs</a>
+                for the full explanation. Do not report this number as overall model precision.
             </div>
         </div>
 
-        <div class="stats-row">
-            <div class="stat"><div class="label">Queue depth</div><div class="value">{{ queue_depth }}</div></div>
-            <div class="stat"><div class="label">Median age</div>
-                <div class="value">{{ median_age_seconds|floatformat:0 }}s</div></div>
-            <div class="stat"><div class="label">Reviewed cases</div><div class="value">{{ total_labels }}</div></div>
-            <div class="stat"><div class="label">Precision (reviewed only)</div>
-                <div class="value">
+        <div class="kpi-row">
+            <div class="kpi"><div class="micro-label">Queue depth</div><div class="kpi-value">{{ queue_depth }}</div></div>
+            <div class="kpi"><div class="micro-label">Median age</div><div class="kpi-value">{{ median_age_seconds|floatformat:0 }}s</div></div>
+            <div class="kpi"><div class="micro-label">Reviewed cases</div><div class="kpi-value">{{ total_labels }}</div></div>
+            <div class="kpi"><div class="micro-label">Precision (reviewed only)</div>
+                <div class="kpi-value">
                     {% if reviewed_precision is not None %}{{ reviewed_precision|floatformat:1 }}%{% else %}—{% endif %}
                 </div>
             </div>
@@ -98,11 +81,11 @@
     {% endif %}
 
     <div class="card">
-        <table>
+        <table class="data-table responsive-table">
             <thead>
                 <tr>
                     <th>Action</th>
-                    <th>Amount</th>
+                    <th class="num">Amount</th>
                     <th>Payer / Payee VPA</th>
                     <th>Risk score / tier</th>
                     <th>Reason codes</th>
@@ -113,23 +96,27 @@
             <tbody>
                 {% for d in page %}
                 <tr>
-                    <td>
-                        <span class="badge {% if d.action == 'BLOCK' %}badge-block{% else %}badge-review{% endif %}">
-                            {{ d.action }}
-                        </span>
+                    <td data-label="Action">
+                        <span class="badge badge-{{ d.action|lower }}">{{ d.action }}</span>
                     </td>
-                    <td>₹{{ d.event.amount|floatformat:2 }}</td>
-                    <td>{{ d.event.payer_vpa }}<br><span style="color:#7d95af;">→ {{ d.event.payee_vpa }}</span></td>
-                    <td>{{ d.risk_score|floatformat:4 }}<br><span style="color:#7d95af;">{{ d.risk_tier }}</span></td>
-                    <td>
+                    <td data-label="Amount" class="num mono">₹{{ d.event.amount|indian_number }}</td>
+                    <td data-label="Payer / Payee VPA">
+                        <div class="vpa-line">{{ d.event.payer_vpa }}</div>
+                        <div class="vpa-line text-tertiary"><span class="arrow">→</span> {{ d.event.payee_vpa }}</div>
+                    </td>
+                    <td data-label="Risk score / tier">
+                        <span class="mono">{{ d.risk_score|floatformat:4 }}</span><br>
+                        <span class="text-tertiary" style="font-size:var(--text-micro);">{{ d.risk_tier }}</span>
+                    </td>
+                    <td data-label="Reason codes">
                         <ul class="reason-list">
                             {% for code in d.reason_codes|slice:":3" %}
                             <li>{{ code.message }}</li>
                             {% endfor %}
                         </ul>
                     </td>
-                    <td>{{ d.scored_at }}</td>
-                    <td>
+                    <td data-label="Scored at" class="mono" style="font-size:var(--text-micro);">{{ d.scored_at }}</td>
+                    <td data-label="Label">
                         <form class="label-form" method="post" action="{% url 'review_queue' %}">
                             {% csrf_token %}
                             <input type="hidden" name="decision_id" value="{{ d.id }}">
@@ -145,8 +132,8 @@
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="7" style="text-align:center; padding:2rem; color:#748ea8;">
-                    Queue is empty — nothing pending review.
+                <tr><td colspan="7">
+                    <div class="empty-state"><i class="fas fa-circle-check"></i>Queue is empty — nothing pending review.</div>
                 </td></tr>
                 {% endfor %}
             </tbody>
@@ -154,10 +141,46 @@
 
         <div class="pagination">
             {% if page.has_previous %}<a href="?page={{ page.previous_page_number }}">← Prev</a>{% endif %}
-            <span style="padding: 0.4rem;">Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+            <span class="page-info">Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
             {% if page.has_next %}<a href="?page={{ page.next_page_number }}">Next →</a>{% endif %}
         </div>
     </div>
 </div>
+<script src="{% static 'js/design-system.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('form.label-form').forEach(function (form) {
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var btn = form.querySelector('button[type=submit]');
+            btn.disabled = true;
+            fetch(form.action, { method: 'POST', body: new FormData(form) })
+                .then(function (r) { return r.text(); })
+                .then(function (html) {
+                    var doc = new DOMParser().parseFromString(html, 'text/html');
+                    var ok = doc.querySelector('.msg.success');
+                    var err = doc.querySelector('.msg.error');
+                    if (ok) {
+                        window.SentinelToast.show(ok.textContent.trim(), 'success');
+                        var row = form.closest('tr');
+                        row.style.transition = 'opacity 200ms, transform 200ms';
+                        row.style.opacity = '0';
+                        row.style.transform = 'translateX(8px)';
+                        setTimeout(function () { row.remove(); }, 200);
+                    } else if (err) {
+                        window.SentinelToast.show(err.textContent.trim(), 'error');
+                        btn.disabled = false;
+                    } else {
+                        window.location.reload();
+                    }
+                })
+                .catch(function () {
+                    window.SentinelToast.show('Network error — could not save label.', 'error');
+                    btn.disabled = false;
+                });
+        });
+    });
+});
+</script>
 </body>
 </html>

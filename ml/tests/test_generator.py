@@ -50,6 +50,20 @@ def test_determinism_same_seed_identical_hash():
     assert hash_a == hash_b
 
 
+def test_generate_with_days_equal_one_does_not_crash():
+    """Regression test (2026-08-19): build_payees' churn-window stratification
+    used to compute `window_end = min(days - 1, ...) = 0` when days=1, one
+    less than `window_start=1` -- guaranteed `ValueError: low >= high` from
+    numpy's rng.integers on every call, deterministically, found via a live
+    500 on a caller (the monitoring dashboard's replay button) that passed
+    days=1. Fixed by treating days<=1 as degenerate: every payee is just
+    "initial" (created_day=0) instead of churned across a window that can't
+    exist for a single-day simulation."""
+    events, summary = generate(days=1, n_payers=15, n_payees=8, seed=123, fraud_rate=0.03)
+    assert summary["event_count"] > 0
+    assert len(events) == summary["event_count"]
+
+
 def test_timestamps_strictly_non_decreasing(medium_dataset):
     events, _ = medium_dataset
     timestamps = [e.timestamp for e in events]

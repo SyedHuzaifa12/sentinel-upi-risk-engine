@@ -14,7 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from feature_lib.registry import REGISTRY  # noqa: E402
 from ml.src.policy.decide import decide  # noqa: E402
-from ml.src.policy.reason_codes import TEMPLATES, compute_reason_codes  # noqa: E402
+from ml.src.policy.reason_codes import TEMPLATES, _missing_template, compute_reason_codes  # noqa: E402
 from ml.src.policy.thresholds import _build_val_probabilities, naive_cutoff_cost  # noqa: E402
 from ml.src.utils.paths import THRESHOLDS_PATH  # noqa: E402
 
@@ -134,6 +134,55 @@ def test_reason_code_messages_never_contain_the_literal_nan():
             assert "nan" not in c["message"].lower(), (
                 f"reason code message leaked a literal NaN: {c['message']!r}"
             )
+
+
+def test_first_ever_pair_payment_gets_a_direct_message_not_a_hedge():
+    """Regression test (2026-08-19, live bug report): a live review queue
+    showed nearly every REVIEW row repeating "Days since payer last paid
+    payee could not be reliably computed (insufficient history)" -- true,
+    but unhelpfully vague, since the condition is exactly and only
+    payer_payee_txn_count == 0. That case now gets a direct statement.
+
+    Tests the template directly (deterministic) rather than only through
+    compute_reason_codes (which depends on SHAP actually ranking this
+    feature in the top_n for a given vector -- not guaranteed for any one
+    hand-built input)."""
+    direct_message = _missing_template("days_since_payer_last_paid_payee")(float("nan"))
+    assert direct_message == "First-ever payment from this payer to this payee"
+
+    # Best-effort end-to-end check too: IF this feature is ranked for a
+    # realistic vector, it must carry the direct message, not the hedge --
+    # not asserted as a hard requirement, since whether SHAP actually ranks
+    # any one specific feature in the top_n depends on the real trained
+    # model for a given hand-built vector, not something to assume.
+    feature_vector = {name: 0.0 for name in TEMPLATES}
+    feature_vector["amount_roundness"] = "neither"
+    feature_vector["days_since_payer_last_paid_payee"] = float("nan")
+    feature_vector["payer_payee_txn_count"] = 0
+    feature_vector["amount_ratio_to_payer_median"] = 15.0
+    feature_vector["payee_age_hours_in_system"] = 1.0
+
+    codes = compute_reason_codes(feature_vector, is_cold=False)  # warm-only feature
+    matches = [c for c in codes if c["code"] == "days_since_payer_last_paid_payee"]
+    if matches:
+        assert matches[0]["message"] == "First-ever payment from this payer to this payee"
+
+
+def test_is_p2p_is_never_the_sole_reason_code():
+    """Regression test (2026-08-19, live bug report): "Person-to-person
+    transfer" showed up as one of the only two reason codes on nearly every
+    review-queue row -- true but nearly meaningless, since P2P is the
+    overwhelming majority of all transactions. It must never be returned as
+    the ONLY code (still fine combined with others)."""
+    feature_vector = {name: 0.0 for name in TEMPLATES}
+    feature_vector["amount_roundness"] = "neither"
+    feature_vector["is_p2p"] = True
+
+    for is_cold in (True, False):
+        codes = compute_reason_codes(feature_vector, is_cold=is_cold)
+        assert not (len(codes) == 1 and codes[0]["code"] == "is_p2p"), (
+            "is_p2p must never be the sole reason code"
+        )
 
 
 # -- headline cost result ------------------------------------------------------

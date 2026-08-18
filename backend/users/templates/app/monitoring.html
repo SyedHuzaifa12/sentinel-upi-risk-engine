@@ -1,68 +1,33 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitoring</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>Monitoring — Sentinel</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>&#128737;</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/design-system.css' %}">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Inter', system-ui, sans-serif;
-            background: linear-gradient(160deg, #f4f9ff 0%, #e8f0f8 100%);
-            min-height: 100vh; padding: 2rem 1.5rem; color: #1c3144; line-height: 1.5;
-        }
-        .container { max-width: 1400px; margin: 0 auto; }
-        .card {
-            background: #fff; border-radius: 1.8rem; padding: 1.8rem 2rem;
-            box-shadow: 0 20px 40px -20px rgba(8,40,70,0.25); margin-bottom: 1.5rem;
-        }
-        h1 { font-size: 1.8rem; font-weight: 700; color: #123653; margin-bottom: 0.5rem; }
-        h2 { font-size: 1.1rem; font-weight: 700; color: #123653; margin-bottom: 0.9rem; }
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
         @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
-        .caveat {
-            background: #fff3e0; border: 1.5px solid #ffcc80; border-radius: 1rem;
-            padding: 1rem 1.4rem; margin-top: 1rem; font-size: 0.92rem; color: #7a4a00;
-            display: flex; gap: 12px; align-items: flex-start;
-        }
-        .caveat i { color: #e07800; font-size: 1.2rem; margin-top: 2px; }
-        .stats-row { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-top: 1.2rem; }
-        .stat { background: #ecf3fa; border-radius: 1rem; padding: 0.8rem 1.4rem; min-width: 160px; }
-        .stat .label { font-size: 0.75rem; text-transform: uppercase; color: #4d6a86; letter-spacing: 0.03em; }
-        .stat .value { font-size: 1.5rem; font-weight: 700; color: #123653; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
-        th {
-            background: #f2f8ff; color: #0f3b5c; font-weight: 600; font-size: 0.75rem;
-            text-transform: uppercase; letter-spacing: 0.02em; padding: 0.75rem 0.6rem;
-            border-bottom: 2px solid #c9ddef; text-align: left;
-        }
-        td { padding: 0.65rem 0.6rem; border-bottom: 1px solid #e6eef7; }
-        .bar-cell { display: flex; align-items: center; gap: 8px; }
-        .bar-track { flex: 1; height: 10px; background: #e6eef7; border-radius: 6px; overflow: hidden; }
-        .bar-fill { height: 100%; background: #2b7fb8; border-radius: 6px; }
-        .bar-fill.psi-mod { background: #e0a72c; }
-        .bar-fill.psi-sig { background: #c0392b; }
-        .empty-note { color: #748ea8; padding: 1rem 0; font-size: 0.9rem; }
-        .pill { display: inline-block; padding: 0.2rem 0.7rem; border-radius: 30px; font-size: 0.72rem; font-weight: 600; }
-        .pill-mod { background: #fff3d6; color: #8a6300; }
-        .pill-sig { background: #fde7e9; color: #b11f2e; }
-        .pill-ok { background: #e2f3e8; color: #1a6e3b; }
-        .version-row { font-family: 'SFMono-Regular', Consolas, monospace; font-size: 0.85rem; color: #4d6a86; }
-        .messages { margin-bottom: 1rem; }
-        .messages .msg { padding: 0.7rem 1.1rem; border-radius: 0.8rem; margin-bottom: 0.5rem; font-size: 0.9rem; }
-        .msg.success { background: #e2f3e8; color: #1a6e3b; }
-        .msg.error { background: #fde7e9; color: #b11f2e; }
-        button.replay-btn {
-            background: #164466; color: white; border: none; border-radius: 8px;
-            padding: 0.6rem 1.2rem; font-size: 0.88rem; cursor: pointer; font-weight: 600;
-        }
-        button.replay-btn:hover { background: #1f5a82; }
-        button.replay-btn:disabled { background: #b7c4d1; cursor: not-allowed; }
+        .replay-row { margin-top: var(--sp-3); display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
+        #replay-status-text { font-size: var(--text-micro); color: var(--text-secondary); }
+        .replay-skeleton { width: 220px; height: 14px; display: none; }
     </style>
 </head>
 <body>
+<nav class="nav">
+    <a href="{% url 'users-home' %}" class="brand"><i class="fas fa-shield-alt"></i>Sentinel</a>
+    <div class="nav-links">
+        <a href="{% url 'monitoring_dashboard' %}" class="nav-link active">Monitoring<span id="replay-live-dot" class="live-dot" style="display:none;"></span></a>
+        <a href="{% url 'review_queue' %}" class="nav-link">Review queue</a>
+        <a href="{% url 'prediction' %}" class="nav-link">Sandbox</a>
+        <a href="https://github.com/SyedHuzaifa12/sentinel-upi-risk-engine" class="nav-link"><i class="fab fa-github"></i> View source</a>
+        <a href="{% url 'logout_view' %}" class="btn-cta">Log out</a>
+    </div>
+</nav>
 <div class="container">
     {% if messages %}
     <div class="messages">
@@ -74,103 +39,193 @@
 
     <div class="card">
         <h1><i class="fas fa-chart-line"></i> Monitoring</h1>
-        <p style="color:#4d6a86;">Live decision volume, latency, drift, and review-queue health.</p>
-        <div class="stats-row">
-            <div class="stat"><div class="label">Cold model version</div><div class="value version-row">{{ cold_version }}</div></div>
-            <div class="stat"><div class="label">Warm model version</div><div class="value version-row">{{ warm_version }}</div></div>
-            <div class="stat"><div class="label">Thresholds version</div><div class="value version-row">{{ thresholds_version }}</div></div>
+        <p>Live decision volume, latency, drift, and review-queue health.</p>
+        <div class="kpi-row">
+            <div class="kpi"><div class="micro-label">Cold model version</div><div class="kpi-value" style="font-size:var(--text-body);">{{ cold_version }}</div></div>
+            <div class="kpi"><div class="micro-label">Warm model version</div><div class="kpi-value" style="font-size:var(--text-body);">{{ warm_version }}</div></div>
+            <div class="kpi"><div class="micro-label">Thresholds version</div><div class="kpi-value" style="font-size:var(--text-body);">{{ thresholds_version }}</div></div>
         </div>
 
-        <div style="margin-top: 1.2rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
-            <form method="post" action="{% url 'monitoring_replay' %}">
-                {% csrf_token %}
-                <button type="submit" class="replay-btn" {% if not replay_available %}disabled{% endif %}>
-                    <i class="fas fa-play"></i> Replay {{ replay_n_events }} events
-                </button>
-            </form>
+        <div class="replay-row">
+            {% csrf_token %}
+            <button type="button" id="replay-btn" class="btn btn-primary" {% if not replay_available %}disabled{% endif %}>
+                <i class="fas fa-play"></i> Replay {{ replay_n_events }} events
+            </button>
+            <div id="replay-skeleton" class="skeleton replay-skeleton"></div>
             {% if replay_available %}
-            <span style="color:#4d6a86; font-size:0.85rem;">
-                Scores {{ replay_n_events }} fresh synthetic events live, in-process.
-                On this deployment's free-tier 0.1 CPU, expect ~1s/event with SHAP reason
-                codes -- vs. the 27ms p99 measured locally on dedicated hardware.
+            <span id="replay-status-text">
+                Scores {{ replay_n_events }} fresh synthetic events live, in-process, in the
+                background — the page won't block while it runs. On this deployment's
+                free-tier 0.1 CPU, expect ~1s/event with SHAP reason codes — vs. the 27ms
+                p99 measured locally on dedicated hardware.
             </span>
             {% else %}
-            <span style="color:#748ea8; font-size:0.85rem;">
-                Not available on this deployment (needs the combined Render process -- see DEPLOY_NOTES.md).
+            <span class="text-tertiary" style="font-size:var(--text-micro);">
+                Not available on this deployment (needs the combined Render process — see the
+                <a href="https://github.com/SyedHuzaifa12/sentinel-upi-risk-engine">repository docs</a>).
             </span>
             {% endif %}
         </div>
     </div>
 
+    {% if replay_available %}
+    <script>
+    (function () {
+        var btn = document.getElementById('replay-btn');
+        var statusText = document.getElementById('replay-status-text');
+        var skeleton = document.getElementById('replay-skeleton');
+        var csrfToken = document.querySelector('input[name=csrfmiddlewaretoken]').value;
+
+        var liveDot = document.getElementById('replay-live-dot');
+
+        function setBusy(busy) {
+            btn.disabled = busy;
+            skeleton.style.display = busy ? 'block' : 'none';
+            liveDot.style.display = busy ? 'inline-block' : 'none';
+        }
+
+        function renderProgress(job) {
+            if (job.error) {
+                statusText.textContent = 'Replay failed: ' + job.error;
+                statusText.style.color = 'var(--block)';
+                if (window.SentinelToast) window.SentinelToast.show('Replay failed: ' + job.error, 'error');
+                return;
+            }
+            if (job.done) {
+                var summary = 'Replayed ' + job.scored + '/' + job.total + ' events in ' +
+                    (job.elapsed_s !== null ? job.elapsed_s.toFixed(1) : '?') + 's -- ' +
+                    JSON.stringify(job.action_counts) + ', ' + job.n_fraud_caught + ' fraud caught.';
+                statusText.textContent = 'Replay complete. Refreshing dashboard…';
+                statusText.style.color = 'var(--allow)';
+                if (window.SentinelToast) window.SentinelToast.show(summary, 'success');
+                liveDot.style.display = 'none';
+                setTimeout(function () { window.location.reload(); }, 2500);
+                return;
+            }
+            statusText.textContent = 'Replaying... ' + job.scored + '/' + job.total + ' scored so far ' +
+                '(' + JSON.stringify(job.action_counts) + ').';
+            statusText.style.color = 'var(--text-secondary)';
+        }
+
+        function poll() {
+            fetch("{% url 'monitoring_replay_status' %}")
+                .then(function (r) { return r.json(); })
+                .then(function (job) {
+                    renderProgress(job);
+                    if (job.running) {
+                        setTimeout(poll, 1500);
+                    } else {
+                        setBusy(false);
+                    }
+                })
+                .catch(function (err) {
+                    statusText.textContent = 'Lost contact with the server while polling: ' + err;
+                    statusText.style.color = 'var(--block)';
+                    setBusy(false);
+                });
+        }
+
+        btn.addEventListener('click', function () {
+            setBusy(true);
+            statusText.textContent = 'Starting replay...';
+            statusText.style.color = 'var(--text-secondary)';
+            fetch("{% url 'monitoring_replay' %}", {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken },
+            })
+                .then(function (r) { return r.json().then(function (body) { return { ok: r.ok, body: body }; }); })
+                .then(function (res) {
+                    if (!res.ok) {
+                        statusText.textContent = res.body.error || 'Could not start replay.';
+                        statusText.style.color = 'var(--block)';
+                        setBusy(false);
+                        return;
+                    }
+                    poll();
+                })
+                .catch(function (err) {
+                    statusText.textContent = 'Could not start replay: ' + err;
+                    statusText.style.color = 'var(--block)';
+                    setBusy(false);
+                });
+        });
+    })();
+    </script>
+    {% endif %}
+
     <div class="grid-2">
         <div class="card">
-            <h2>Alert rate over time</h2>
-            <table>
-                <thead><tr><th>Day</th><th>Total</th><th>Alerted (not ALLOW)</th><th>Alert rate</th></tr></thead>
+            <h2><span class="h2-icon"><i class="fas fa-calendar-days"></i></span> Alert rate over time</h2>
+            {% if alert_rate %}
+            <div class="sparkline-wrap" id="alert-rate-sparkline"></div>
+            {{ alert_rate|json_script:"alert-rate-data" }}
+            {% endif %}
+            <table class="data-table">
+                <thead><tr><th>Day</th><th class="num">Total</th><th class="num">Alerted</th><th class="num">Alert rate</th></tr></thead>
                 <tbody>
                     {% for row in alert_rate %}
                     <tr>
-                        <td>{{ row.day|date:"Y-m-d" }}</td>
-                        <td>{{ row.total }}</td>
-                        <td>{{ row.alerts }}</td>
-                        <td>{{ row.alert_rate_pct }}%</td>
+                        <td class="mono">{{ row.day|date:"Y-m-d" }}</td>
+                        <td class="num mono">{{ row.total }}</td>
+                        <td class="num mono">{{ row.alerts }}</td>
+                        <td class="num mono">{{ row.alert_rate_pct }}%</td>
                     </tr>
                     {% empty %}
-                    <tr><td colspan="4" class="empty-note">No decisions logged yet.</td></tr>
+                    <tr><td colspan="4"><div class="empty-state"><i class="fas fa-inbox"></i>No decisions logged yet.</div></td></tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
 
         <div class="card">
-            <h2>Action mix</h2>
-            <table>
-                <thead><tr><th>Action</th><th>Count</th><th>Share</th></tr></thead>
+            <h2><span class="h2-icon"><i class="fas fa-scale-balanced"></i></span> Action mix</h2>
+            <table class="data-table">
+                <thead><tr><th>Action</th><th class="num">Count</th><th style="width:40%;">Share</th></tr></thead>
                 <tbody>
                     {% for row in action_mix %}
                     <tr>
-                        <td>{{ row.action }}</td>
-                        <td>{{ row.n }}</td>
+                        <td><span class="badge badge-{{ row.action|lower }}">{{ row.action }}</span></td>
+                        <td class="num mono">{{ row.n }}</td>
                         <td>
-                            <div class="bar-cell">
-                                <div class="bar-track"><div class="bar-fill" style="width: {{ row.pct }}%;"></div></div>
-                                <span>{{ row.pct }}%</span>
+                            <div class="bar-row">
+                                <div class="bar-track"><div class="bar-fill {{ row.action|lower }}" style="width: {{ row.pct }}%;"></div></div>
+                                <span class="bar-value">{{ row.pct }}%</span>
                             </div>
                         </td>
                     </tr>
                     {% empty %}
-                    <tr><td colspan="3" class="empty-note">No decisions logged yet.</td></tr>
+                    <tr><td colspan="3"><div class="empty-state"><i class="fas fa-inbox"></i>No decisions logged yet.</div></td></tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
 
         <div class="card">
-            <h2>Risk score histogram</h2>
-            <table>
-                <thead><tr><th>Bucket start</th><th>Count</th></tr></thead>
+            <h2><span class="h2-icon"><i class="fas fa-chart-column"></i></span> Risk score histogram</h2>
+            <table class="data-table">
+                <thead><tr><th>Bucket start</th><th class="num">Count</th></tr></thead>
                 <tbody>
                     {% for row in score_histogram %}
-                    <tr><td>{{ row.bucket_start }}</td><td>{{ row.n }}</td></tr>
+                    <tr><td class="mono">{{ row.bucket_start }}</td><td class="num mono">{{ row.n }}</td></tr>
                     {% empty %}
-                    <tr><td colspan="2" class="empty-note">No decisions logged yet.</td></tr>
+                    <tr><td colspan="2"><div class="empty-state"><i class="fas fa-inbox"></i>No decisions logged yet.</div></td></tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
 
         <div class="card">
-            <h2>Latency (p50 / p95 / p99, ms)</h2>
-            <table>
-                <thead><tr><th>Source</th><th>n</th><th>p50</th><th>p95</th><th>p99</th></tr></thead>
+            <h2><span class="h2-icon"><i class="fas fa-gauge-high"></i></span> Latency (p50 / p95 / p99, ms)</h2>
+            <table class="data-table">
+                <thead><tr><th>Source</th><th class="num">n</th><th class="num">p50</th><th class="num">p95</th><th class="num">p99</th></tr></thead>
                 <tbody>
                     {% for row in latency %}
                     <tr>
-                        <td>{{ row.source }}</td><td>{{ row.n }}</td>
-                        <td>{{ row.p50_ms }}</td><td>{{ row.p95_ms }}</td><td>{{ row.p99_ms }}</td>
+                        <td class="mono">{{ row.source }}</td><td class="num mono">{{ row.n }}</td>
+                        <td class="num mono">{{ row.p50_ms }}</td><td class="num mono">{{ row.p95_ms }}</td><td class="num mono">{{ row.p99_ms }}</td>
                     </tr>
                     {% empty %}
-                    <tr><td colspan="5" class="empty-note">No decisions logged yet.</td></tr>
+                    <tr><td colspan="5"><div class="empty-state"><i class="fas fa-inbox"></i>No decisions logged yet.</div></td></tr>
                     {% endfor %}
                 </tbody>
             </table>
@@ -178,66 +233,80 @@
     </div>
 
     <div class="card">
-        <h2>Review queue health</h2>
-        <div class="stats-row">
-            <div class="stat"><div class="label">Queue depth</div>
-                <div class="value">{% if queue %}{{ queue.queue_depth }}{% else %}—{% endif %}</div></div>
-            <div class="stat"><div class="label">Median age</div>
-                <div class="value">
+        <h2><span class="h2-icon"><i class="fas fa-magnifying-glass"></i></span> Review queue health</h2>
+        <div class="kpi-row">
+            <div class="kpi"><div class="micro-label">Queue depth</div>
+                <div class="kpi-value">{% if queue %}{{ queue.queue_depth }}{% else %}—{% endif %}</div></div>
+            <div class="kpi"><div class="micro-label">Median age</div>
+                <div class="kpi-value">
                     {% if queue and queue.median_age_seconds is not None %}{{ queue.median_age_seconds|floatformat:0 }}s{% else %}—{% endif %}
                 </div>
             </div>
-            <div class="stat"><div class="label">Reviewed cases</div>
-                <div class="value">{% if precision %}{{ precision.n_reviewed }}{% else %}0{% endif %}</div></div>
-            <div class="stat"><div class="label">Precision (reviewed only)</div>
-                <div class="value">
+            <div class="kpi"><div class="micro-label">Reviewed cases</div>
+                <div class="kpi-value">{% if precision %}{{ precision.n_reviewed }}{% else %}0{% endif %}</div></div>
+            <div class="kpi"><div class="micro-label">Precision (reviewed only)</div>
+                <div class="kpi-value">
                     {% if precision and precision.precision_on_reviewed_pct is not None %}{{ precision.precision_on_reviewed_pct }}%{% else %}—{% endif %}
                 </div>
             </div>
         </div>
-        <div class="caveat">
+        <div class="callout">
             <i class="fas fa-triangle-exclamation"></i>
             <div>
                 <strong>Selective labelling bias:</strong> precision above is computed only over
                 transactions that were alerted (REVIEW/BLOCK) <em>and</em> subsequently reviewed by
                 an analyst. It says nothing about fraud that was never flagged, or about the ALLOW
-                tier's real error rate. See <code>DESIGN.md</code> for the full explanation.
+                tier's real error rate. See the
+                <a href="https://github.com/SyedHuzaifa12/sentinel-upi-risk-engine">repository docs</a>
+                for the full explanation.
             </div>
         </div>
     </div>
 
     <div class="card">
-        <h2>Feature drift — top features by PSI</h2>
+        <h2><span class="h2-icon"><i class="fas fa-wave-square"></i></span> Feature drift — top features by PSI</h2>
         {% if drift_report_generated_at %}
-        <p style="color:#4d6a86; font-size:0.85rem; margin-bottom:0.8rem;">
+        <p class="text-tertiary" style="font-size:var(--text-micro); margin-bottom:var(--sp-1);">
             Latest drift report generated at {{ drift_report_generated_at }}.
         </p>
-        <table>
-            <thead><tr><th>Feature</th><th>PSI</th><th>Severity</th></tr></thead>
+        <table class="data-table">
+            <thead><tr><th>Feature</th><th class="num">PSI</th><th>Severity</th></tr></thead>
             <tbody>
                 {% for feature, psi in top_drifted %}
                 <tr>
-                    <td>{{ feature }}</td>
-                    <td>{{ psi|floatformat:4 }}</td>
+                    <td class="mono">{{ feature }}</td>
+                    <td class="num mono">{{ psi|floatformat:4 }}</td>
                     <td>
-                        {% if psi > 0.25 %}<span class="pill pill-sig">significant</span>
-                        {% elif psi > 0.1 %}<span class="pill pill-mod">moderate</span>
-                        {% else %}<span class="pill pill-ok">stable</span>{% endif %}
+                        {% if psi > 0.25 %}<span class="badge badge-block">significant</span>
+                        {% elif psi > 0.1 %}<span class="badge badge-warn">moderate</span>
+                        {% else %}<span class="badge badge-allow">stable</span>{% endif %}
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
         {% if cold_start_caveat %}
-        <div class="caveat">
+        <div class="callout">
             <i class="fas fa-triangle-exclamation"></i>
             <div><strong>Cold-start caveat:</strong> {{ cold_start_caveat }}</div>
         </div>
         {% endif %}
         {% else %}
-        <p class="empty-note">No drift report yet — run <code>python -m pipelines.drift_check</code> to generate one.</p>
+        <div class="empty-state"><i class="fas fa-wave-square"></i>No drift report yet — run <code>python -m pipelines.drift_check</code> to generate one.</div>
         {% endif %}
     </div>
 </div>
+<script src="{% static 'js/design-system.js' %}"></script>
+{% if alert_rate %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var raw = document.getElementById('alert-rate-data');
+    if (raw && window.SentinelSparkline) {
+        var data = JSON.parse(raw.textContent);
+        window.SentinelSparkline('alert-rate-sparkline', data.map(function (r) { return r.alert_rate_pct; }));
+    }
+});
+</script>
+{% endif %}
 </body>
 </html>

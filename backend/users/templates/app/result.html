@@ -1,78 +1,50 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UPI fraud prediction · result</title>
-    <!-- Inter font - clean professional -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
-    <!-- Font Awesome 6 -->
+    <title>Result — Sentinel</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>&#128737;</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/design-system.css' %}">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background: linear-gradient(145deg, #f0f5fa 0%, #e6eef5 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 2rem 1rem;
-            color: #1a2e44;
-            line-height: 1.5;
-        }
+        body { display: block; }
 
         .result-card {
-            max-width: 1200px;
+            max-width: var(--content-width);
             width: 100%;
-            background: rgba(255,255,255,0.95);
-            backdrop-filter: blur(2px);
-            background: #ffffff;
-            border-radius: 2.5rem;
-            box-shadow: 
-                0 30px 50px -20px rgba(0,30,60,0.25),
-                0 8px 20px rgba(0,20,40,0.08),
-                inset 0 1px 1px rgba(255,255,255,0.6);
-            border: 1px solid rgba(255,255,255,0.7);
+            margin: 0 auto var(--sp-4);
+            background: var(--surface);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
             overflow: hidden;
         }
 
-        /* header area with dynamic gradient based on fraud status */
+        /* header area */
         .result-header {
-            padding: 2.2rem 2.5rem 1.8rem 2.5rem;
-            border-bottom: 1px solid #e3ecf3;
+            padding: var(--sp-3);
+            border-bottom: 1px solid var(--border);
         }
 
         .badge-title {
             display: flex;
             align-items: center;
             gap: 14px;
-            margin-bottom: 20px;
+            margin-bottom: var(--sp-2);
         }
 
         .badge-title i {
-            font-size: 2.2rem;
-            background: #ecf3fa;
+            font-size: 1.6rem;
+            background: var(--accent-bg);
             padding: 12px;
-            border-radius: 30px;
-            color: #1e4f7a;
+            border-radius: var(--radius-full);
+            color: var(--accent);
         }
 
         .badge-title h2 {
-            font-weight: 600;
-            font-size: 2rem;
-            letter-spacing: -0.02em;
-            background: linear-gradient(145deg, #123653, #1d5b88);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            font-size: var(--text-h1);
         }
 
         /* prediction status pill */
@@ -80,7 +52,7 @@
             display: flex;
             align-items: center;
             flex-wrap: wrap;
-            gap: 1.5rem 2.5rem;
+            gap: var(--sp-2) var(--sp-3);
             margin-top: 0.5rem;
         }
 
@@ -88,386 +60,310 @@
             display: inline-flex;
             align-items: center;
             gap: 12px;
-            padding: 1rem 2.5rem 1rem 2rem;
-            border-radius: 60px;
-            font-weight: 600;
-            font-size: 1.5rem;
-            letter-spacing: 0.01em;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            padding: 10px 24px 10px 18px;
+            border-radius: var(--radius-full);
+            font-weight: 700;
+            font-size: var(--text-h2);
+            font-family: var(--font-mono);
+            border: 1px solid;
         }
 
-        .pill i {
-            font-size: 2rem;
-        }
+        .pill i { font-size: 1.4rem; }
 
-        .fraud-yes {
-            background: #b22234;  /* strong red */
-            background: linear-gradient(145deg, #b11f2e, #a5313d);
-            color: white;
-            box-shadow: 0 10px 18px -8px #ac3843;
-        }
-
-        .fraud-no {
-            background: #1d6f42;
-            background: linear-gradient(145deg, #1d6f42, #278b51);
-            color: white;
-            box-shadow: 0 10px 18px -8px #166b37;
-        }
-
-        .action-warn {
-            background: #b8860b;
-            background: linear-gradient(145deg, #b8860b, #d4a017);
-            color: white;
-            box-shadow: 0 10px 18px -8px #a8790a;
-        }
-
-        .action-review {
-            background: #b05a1f;
-            background: linear-gradient(145deg, #b05a1f, #d97747);
-            color: white;
-            box-shadow: 0 10px 18px -8px #a04f1a;
-        }
+        .fraud-yes { background: color-mix(in srgb, var(--block) 12%, transparent); color: var(--block); border-color: color-mix(in srgb, var(--block) 35%, transparent); }
+        .fraud-no { background: color-mix(in srgb, var(--allow) 12%, transparent); color: var(--allow); border-color: color-mix(in srgb, var(--allow) 35%, transparent); }
+        .action-warn { background: color-mix(in srgb, var(--warn) 12%, transparent); color: var(--warn); border-color: color-mix(in srgb, var(--warn) 35%, transparent); }
+        .action-review { background: color-mix(in srgb, var(--review) 12%, transparent); color: var(--review); border-color: color-mix(in srgb, var(--review) 35%, transparent); }
 
         .risk-tier-badge {
             display: inline-block;
-            padding: 0.3rem 1rem;
-            border-radius: 30px;
+            padding: 3px 12px;
+            border-radius: var(--radius-full);
             font-weight: 600;
-            font-size: 0.8rem;
-            letter-spacing: 0.02em;
-            background: #ecf3fa;
-            color: #1e4f7a;
+            font-size: var(--text-micro);
+            background: var(--surface-raised);
+            color: var(--text-secondary);
             margin-left: 10px;
+            border: 1px solid var(--border);
         }
 
         .interpretation {
-            font-size: 1.2rem;
-            color: #2f4858;
-            background: #ecf3fa;
-            padding: 0.8rem 1.8rem;
-            border-radius: 60px;
+            font-size: var(--text-body-lg);
+            color: var(--text-secondary);
+            background: var(--surface-raised);
+            border: 1px solid var(--border);
+            padding: 10px 20px;
+            border-radius: var(--radius-full);
             display: flex;
             align-items: center;
             gap: 10px;
         }
 
-        .interpretation i {
-            color: #31678c;
-        }
+        .interpretation strong { color: var(--text-primary); font-family: var(--font-mono); }
+
+        .interpretation i { color: var(--accent); }
 
         /* action buttons */
         .action-row {
             display: flex;
-            gap: 1rem;
+            gap: var(--sp-1);
             margin-left: auto;
         }
 
         .btn-outline {
             background: transparent;
-            border: 1.5px solid #b8cfE5;
-            padding: 0.9rem 2rem;
-            border-radius: 50px;
+            border: 1px solid var(--border-strong);
+            padding: 10px 22px;
+            border-radius: var(--radius-full);
             font-weight: 600;
-            font-size: 1rem;
-            color: #1d4e79;
+            font-size: var(--text-body);
+            color: var(--text-primary);
             cursor: pointer;
             display: inline-flex;
             align-items: center;
             gap: 10px;
-            transition: all 0.2s;
+            transition: border-color 0.15s, transform 0.15s;
             text-decoration: none;
-            font-family: 'Inter', sans-serif;
+            font-family: var(--font-body);
         }
 
-        .btn-outline i {
-            font-size: 1.1rem;
-        }
-
-        .btn-outline:hover {
-            background: #dbeaf5;
-            border-color: #6396c2;
-            transform: translateY(-2px);
-        }
+        .btn-outline:hover { border-color: var(--accent); transform: translateY(-1px); }
 
         .btn-filled {
-            background: #164466;
-            border: none;
-            padding: 0.9rem 2.2rem;
-            border-radius: 50px;
+            background: var(--accent);
+            border: 1px solid transparent;
+            padding: 10px 24px;
+            border-radius: var(--radius-full);
             font-weight: 600;
-            font-size: 1rem;
-            color: white;
+            font-size: var(--text-body);
+            color: var(--text-on-accent);
             cursor: pointer;
             display: inline-flex;
             align-items: center;
             gap: 10px;
-            box-shadow: 0 6px 14px rgba(20,70,100,0.4);
-            transition: all 0.2s;
-            border: 1px solid rgba(255,255,255,0.2);
+            transition: background 0.15s, transform 0.15s;
         }
 
-        .btn-filled i {
-            font-size: 1.1rem;
-        }
+        .btn-filled:hover { background: var(--accent-hover, #5254e0); transform: translateY(-1px); }
 
-        .btn-filled:hover {
-            background: #1f5a82;
-            transform: translateY(-2px);
-            box-shadow: 0 12px 18px -6px #123c57;
+        .soft-meta {
+            color: var(--text-tertiary);
+            font-size: var(--text-micro);
+            font-style: italic;
         }
 
         /* details sections — only shown when fraud detected */
         .fraud-details-grid {
-            padding: 2.2rem 2.5rem 1.5rem 2.5rem;
+            padding: var(--sp-3);
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 1.8rem;
-            background: #f9fcff;
+            gap: var(--sp-2);
+            background: var(--bg);
         }
 
         .detail-card {
-            background: white;
-            border-radius: 1.8rem;
-            padding: 1.6rem 1.8rem 1.8rem 1.8rem;
-            box-shadow: 0 8px 22px -10px rgba(20,50,80,0.12);
-            border: 1px solid #eef4f9;
-            transition: all 0.2s;
+            background: var(--surface-raised);
+            border-radius: var(--radius);
+            padding: var(--sp-2);
+            border: 1px solid var(--border);
+            transition: border-color 0.15s;
         }
 
-        .detail-card:hover {
-            border-color: #cbdae9;
-            box-shadow: 0 14px 26px -12px rgba(20,80,120,0.18);
-        }
+        .detail-card:hover { border-color: var(--border-strong); }
 
         .card-header {
             display: flex;
             align-items: center;
             gap: 10px;
-            margin-bottom: 1.3rem;
-            border-bottom: 2px dashed #c1d8ec;
-            padding-bottom: 0.75rem;
+            margin-bottom: var(--sp-2);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 12px;
         }
 
         .card-header i {
-            font-size: 1.8rem;
-            color: #b22234;
-            background: #fce9e9;
+            font-size: 1.2rem;
+            color: var(--block);
+            background: color-mix(in srgb, var(--block) 12%, transparent);
             padding: 8px;
-            border-radius: 16px;
+            border-radius: var(--radius-sm);
         }
 
-        .card-header h3 {
-            font-weight: 600;
-            font-size: 1.35rem;
-            color: #112c41;
-        }
+        .card-header h3 { font-size: var(--text-body-lg); }
 
-        .bullet-list {
-            list-style: none;
-        }
+        .bullet-list { list-style: none; }
 
         .bullet-list li {
             display: flex;
             gap: 12px;
             align-items: flex-start;
-            margin-bottom: 1rem;
-            font-size: 0.98rem;
-            color: #1f3a52;
+            margin-bottom: var(--sp-1);
+            font-size: var(--text-body);
+            color: var(--text-primary);
         }
 
         .bullet-list li i {
-            color: #b63e32;
+            color: var(--block);
             font-size: 0.85rem;
-            margin-top: 0.25rem;
+            margin-top: 0.35rem;
             min-width: 18px;
         }
 
-        .bullet-list li span {
-            line-height: 1.5;
-        }
-
-        .soft-meta {
-            color: #4d6a86;
-            font-size: 0.9rem;
-            margin-top: 0.8rem;
-            padding-left: 30px;
-            font-style: italic;
-        }
+        .bullet-list li span { line-height: 1.5; }
 
         /* when no fraud - show a clean safe state with subtle info + education */
         .safe-panel {
-            padding: 2rem 2.5rem 1.5rem 2.5rem;
-            background: #f2f9f4;
+            padding: var(--sp-4) var(--sp-3) var(--sp-3);
+            background: var(--bg);
             display: flex;
             flex-direction: column;
             align-items: center;
             text-align: center;
-            border-bottom: 2px solid #c0ddcf;
+            border-bottom: 1px solid var(--border);
         }
 
         .safe-icon {
-            font-size: 4rem;
-            color: #1f7840;
-            background: #e1f3e6;
+            font-size: 3rem;
+            color: var(--allow);
+            background: color-mix(in srgb, var(--allow) 12%, transparent);
             padding: 1rem 2rem;
-            border-radius: 80px;
-            margin-bottom: 1rem;
+            border-radius: var(--radius-full);
+            margin-bottom: var(--sp-2);
             display: inline-block;
         }
 
         .safe-message {
-            font-size: 1.5rem;
-            font-weight: 500;
-            color: #1a5a38;
+            font-size: var(--text-h2);
+            font-weight: 700;
+            color: var(--text-primary);
         }
 
         .safe-note {
-            margin-top: 1.2rem;
-            color: #346c4c;
+            margin-top: var(--sp-2);
+            color: var(--text-secondary);
             max-width: 500px;
         }
 
-        /* new comprehensive fraud education section (reusable) */
+        /* fraud education section (reusable) */
         .education-section {
-            padding: 1rem 2.5rem 2.5rem 2.5rem;
-            background: linear-gradient(145deg, #f3f7fb, #eaf1f9);
-            border-top: 2px solid #d0e0ef;
+            padding: var(--sp-2) var(--sp-3) var(--sp-4);
+            background: var(--bg);
+            border-top: 1px solid var(--border);
         }
 
         .edu-header {
             display: flex;
             align-items: center;
-            gap: 1rem;
-            margin-bottom: 1.8rem;
+            gap: var(--sp-2);
+            margin-bottom: var(--sp-3);
         }
 
         .edu-header i {
-            font-size: 2.2rem;
-            color: #b63e32;
-            background: #ffffffc0;
-            padding: 0.8rem;
-            border-radius: 30px;
-            box-shadow: 0 5px 10px rgba(0,0,0,0.05);
+            font-size: 1.6rem;
+            color: var(--accent);
+            background: var(--accent-bg);
+            padding: 0.7rem;
+            border-radius: var(--radius-full);
         }
 
-        .edu-header h2 {
-            font-weight: 600;
-            font-size: 1.9rem;
-            color: #103247;
-            letter-spacing: -0.01em;
-        }
+        .edu-header h2 { font-size: var(--text-h2); }
 
         .fraud-types-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1.5rem;
-            margin-top: 1.2rem;
+            gap: var(--sp-2);
+            margin-top: var(--sp-1);
         }
 
         .type-card {
-            background: white;
-            border-radius: 1.5rem;
-            padding: 1.5rem;
-            border-left: 8px solid;
-            box-shadow: 0 10px 18px -8px rgba(0,40,70,0.15);
+            background: var(--surface-raised);
+            border-radius: var(--radius);
+            padding: var(--sp-2);
+            border: 1px solid var(--border);
+            border-left: 4px solid;
             transition: transform 0.15s;
         }
 
-        .type-card:hover {
-            transform: translateY(-4px);
-        }
+        .type-card:hover { transform: translateY(-2px); }
 
-        .type-card.danger-high { border-left-color: #b22234; }
-        .type-card.danger-medium { border-left-color: #d97747; }
-        .type-card.danger-low { border-left-color: #e6b422; }
+        .type-card.danger-high { border-left-color: var(--block); }
+        .type-card.danger-medium { border-left-color: var(--review); }
+        .type-card.danger-low { border-left-color: var(--warn); }
 
         .type-title {
             display: flex;
             align-items: center;
             gap: 10px;
-            margin-bottom: 1rem;
+            margin-bottom: var(--sp-1);
         }
 
-        .type-title i {
-            font-size: 1.8rem;
-        }
+        .type-title i { font-size: 1.3rem; }
 
-        .type-title h3 {
-            font-weight: 700;
-            font-size: 1.4rem;
-            color: #1f3a57;
-        }
+        .type-title h3 { font-size: var(--text-body-lg); color: var(--text-primary); }
 
         .danger-badge {
             display: inline-block;
-            background: #fce9e9;
-            color: #b11f2e;
+            background: color-mix(in srgb, var(--block) 12%, transparent);
+            color: var(--block);
             font-weight: 600;
-            font-size: 0.75rem;
-            padding: 0.3rem 1rem;
-            border-radius: 30px;
-            margin: 0.6rem 0 0.8rem 0;
+            font-size: 11px;
+            padding: 4px 12px;
+            border-radius: var(--radius-full);
+            margin: 8px 0 10px 0;
             letter-spacing: 0.3px;
+            text-transform: uppercase;
         }
 
         .how-occur {
-            background: #ecf7fe;
-            padding: 0.8rem 1rem;
-            border-radius: 18px;
-            margin: 1rem 0;
-            font-size: 0.95rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 12px 14px;
+            border-radius: var(--radius-sm);
+            margin: var(--sp-1) 0;
+            font-size: var(--text-micro);
+            color: var(--text-secondary);
         }
 
-        .how-occur i {
-            color: #1e5a88;
-            margin-right: 8px;
-        }
+        .how-occur i { color: var(--accent); margin-right: 8px; }
 
         .prevent-tip {
             display: flex;
             gap: 10px;
-            margin-top: 0.8rem;
-            font-size: 0.93rem;
-            color: #234b6e;
+            margin-top: var(--sp-1);
+            font-size: var(--text-micro);
+            color: var(--text-secondary);
             align-items: flex-start;
         }
 
-        .prevent-tip i {
-            color: #1e7e34;
-            font-size: 1rem;
-            margin-top: 0.2rem;
-        }
+        .prevent-tip i { color: var(--allow); font-size: 1rem; margin-top: 0.2rem; }
 
-        hr {
-            border: none;
-            border-top: 2px solid #e0eaf3;
-        }
+        hr { border: none; border-top: 1px solid var(--border); }
 
         /* responsive */
         @media (max-width: 750px) {
-            .fraud-details-grid {
-                grid-template-columns: 1fr;
-                padding: 1.8rem 1.5rem;
-            }
-            .prediction-block {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            .result-header {
-                padding: 1.5rem 1.5rem 1.2rem;
-            }
-            .education-section {
-                padding: 1rem 1.5rem 2rem;
-            }
+            .fraud-details-grid { grid-template-columns: 1fr; padding: var(--sp-2); }
+            .prediction-block { flex-direction: column; align-items: flex-start; }
+            .result-header { padding: var(--sp-2); }
+            .education-section { padding: var(--sp-2); }
         }
     </style>
 </head>
 <body>
+<nav class="nav">
+    <a href="{% url 'users-home' %}" class="brand"><i class="fas fa-shield-alt"></i>Sentinel</a>
+    <div class="nav-links">
+        <a href="{% url 'monitoring_dashboard' %}" class="nav-link">Monitoring</a>
+        <a href="{% url 'review_queue' %}" class="nav-link">Review queue</a>
+        <a href="{% url 'prediction' %}" class="nav-link">Sandbox</a>
+        <a href="https://github.com/SyedHuzaifa12/sentinel-upi-risk-engine" class="nav-link"><i class="fab fa-github"></i> View source</a>
+        <a href="{% url 'logout_view' %}" class="btn-cta">Log out</a>
+    </div>
+</nav>
+<div class="container">
 <div class="result-card">
     <!-- header always visible -->
     <div class="result-header">
         <div class="badge-title">
-            <i class="fas fa-shield-halved"></i>
+            <i class="fas fa-shield-alt"></i>
             <h2>UPI fraud analysis</h2>
         </div>
 
@@ -535,7 +431,7 @@
     {% elif action == "ALLOW" %}
     <div class="safe-panel">
         <div class="safe-icon">
-            <i class="fas fa-shield-check"></i>
+            <i class="fas fa-circle-check"></i>
         </div>
         <div class="safe-message">Transaction allowed</div>
         <div class="safe-note">
@@ -554,16 +450,16 @@
             <i class="fas fa-graduation-cap"></i>
             <h2>Understanding UPI frauds · types, risks & safety</h2>
         </div>
-        <p style="margin-bottom: 1.5rem; color: #2b4b6e; font-size: 1.05rem; background: #ffffffb0; padding: 0.8rem 1.5rem; border-radius: 60px;">
-            <i class="fas fa-circle-info" style="color: #b63e32;"></i>
-            There are <strong>8 major types of UPI frauds</strong> — below is how they occur, which ones are most dangerous, and how to stay protected.
+        <p style="margin-bottom: var(--sp-3); color: var(--text-secondary); font-size: var(--text-body); background: var(--surface-raised); border: 1px solid var(--border); padding: 12px 24px; border-radius: var(--radius-full);">
+            <i class="fas fa-circle-info" style="color: var(--accent);"></i>
+            There are <strong style="color:var(--text-primary);">8 major types of UPI frauds</strong> — below is how they occur, which ones are most dangerous, and how to stay protected.
         </p>
 
         <div class="fraud-types-grid">
             <!-- 1. Phishing / Vishing (high danger) -->
             <div class="type-card danger-high">
                 <div class="type-title">
-                    <i class="fas fa-fish" style="color:#b22234;"></i>
+                    <i class="fas fa-fish" style="color:var(--block);"></i>
                     <h3>Phishing & Vishing</h3>
                 </div>
                 <div class="danger-badge"><i class="fas fa-skull"></i> DANGER: HIGH (direct credential theft)</div>
@@ -571,14 +467,14 @@
                     <i class="fas fa-question-circle"></i> <strong>How it occurs:</strong> Fake emails/SMS posing as bank, fake customer care calls asking for PIN/OTP, or fraudulent links that clone UPI login pages.
                 </div>
                 <div class="prevent-tip">
-                    <i class="fas fa-shield-check"></i> <span><strong>Safe:</strong> Never share OTP/PIN. Banks never ask for them. Hang up and call official number.</span>
+                    <i class="fas fa-circle-check"></i> <span><strong>Safe:</strong> Never share OTP/PIN. Banks never ask for them. Hang up and call official number.</span>
                 </div>
             </div>
 
             <!-- 2. QR code tampering (medium-high) -->
             <div class="type-card danger-high">
                 <div class="type-title">
-                    <i class="fas fa-qrcode" style="color:#b63e32;"></i>
+                    <i class="fas fa-qrcode" style="color:var(--block);"></i>
                     <h3>Fake / swapped QR codes</h3>
                 </div>
                 <div class="danger-badge"><i class="fas fa-skull"></i> DANGER: HIGH (widespread & silent)</div>
@@ -586,14 +482,14 @@
                     <i class="fas fa-question-circle"></i> <strong>How it occurs:</strong> Fraudsters replace legitimate merchant QR stickers with their own. User scans and pays the fraudster.
                 </div>
                 <div class="prevent-tip">
-                    <i class="fas fa-shield-check"></i> <span><strong>Safe:</strong> Always verify receiver name before entering PIN. Use QR code only from trusted sources.</span>
+                    <i class="fas fa-circle-check"></i> <span><strong>Safe:</strong> Always verify receiver name before entering PIN. Use QR code only from trusted sources.</span>
                 </div>
             </div>
 
             <!-- 3. SIM swap (critical) -->
             <div class="type-card danger-high">
                 <div class="type-title">
-                    <i class="fas fa-sim-card" style="color:#b22234;"></i>
+                    <i class="fas fa-sim-card" style="color:var(--block);"></i>
                     <h3>SIM swap attack</h3>
                 </div>
                 <div class="danger-badge"><i class="fas fa-skull"></i> DANGER: EXTREME (account takeover)</div>
@@ -601,14 +497,14 @@
                     <i class="fas fa-question-circle"></i> <strong>How it occurs:</strong> Attacker gets a duplicate SIM through fraud, intercepts OTPs, and drains bank accounts.
                 </div>
                 <div class="prevent-tip">
-                    <i class="fas fa-shield-check"></i> <span><strong>Safe:</strong> If mobile network goes dead unexpectedly, contact operator immediately. Use SIM lock / biometric.</span>
+                    <i class="fas fa-circle-check"></i> <span><strong>Safe:</strong> If mobile network goes dead unexpectedly, contact operator immediately. Use SIM lock / biometric.</span>
                 </div>
             </div>
 
             <!-- 4. Malware / screen recording (high) -->
             <div class="type-card danger-high">
                 <div class="type-title">
-                    <i class="fas fa-virus" style="color:#b63e32;"></i>
+                    <i class="fas fa-virus" style="color:var(--block);"></i>
                     <h3>Malware & screen readers</h3>
                 </div>
                 <div class="danger-badge"><i class="fas fa-skull"></i> DANGER: HIGH (invisible)</div>
@@ -616,14 +512,14 @@
                     <i class="fas fa-question-circle"></i> <strong>How it occurs:</strong> Malicious apps (often fake “loan” or “utility” apps) gain accessibility access and capture UPI credentials.
                 </div>
                 <div class="prevent-tip">
-                    <i class="fas fa-shield-check"></i> <span><strong>Safe:</strong> Install apps only from Play Store/App Store. Deny accessibility permission to unknown apps.</span>
+                    <i class="fas fa-circle-check"></i> <span><strong>Safe:</strong> Install apps only from Play Store/App Store. Deny accessibility permission to unknown apps.</span>
                 </div>
             </div>
 
             <!-- 5. AutoPay / e-mandate fraud (medium) -->
             <div class="type-card danger-medium">
                 <div class="type-title">
-                    <i class="fas fa-clock" style="color:#d97747;"></i>
+                    <i class="fas fa-clock" style="color:var(--review);"></i>
                     <h3>AutoPay / e‑mandate abuse</h3>
                 </div>
                 <div class="danger-badge">DANGER: MEDIUM (recurring unnoticed)</div>
@@ -631,14 +527,14 @@
                     <i class="fas fa-question-circle"></i> <strong>How it occurs:</strong> Fraudsters create recurring mandates via deceptive clicks; small amounts deducted monthly.
                 </div>
                 <div class="prevent-tip">
-                    <i class="fas fa-shield-check"></i> <span><strong>Safe:</strong> Regularly check active mandates in UPI app. Revoke any unknown.</span>
+                    <i class="fas fa-circle-check"></i> <span><strong>Safe:</strong> Regularly check active mandates in UPI app. Revoke any unknown.</span>
                 </div>
             </div>
 
             <!-- 6. Fake customer care (high) -->
             <div class="type-card danger-high">
                 <div class="type-title">
-                    <i class="fas fa-headset" style="color:#b22234;"></i>
+                    <i class="fas fa-headset" style="color:var(--block);"></i>
                     <h3>Fake customer care</h3>
                 </div>
                 <div class="danger-badge">DANGER: HIGH (social engineering)</div>
@@ -646,14 +542,14 @@
                     <i class="fas fa-question-circle"></i> <strong>How it occurs:</strong> Numbers listed on Google/Facebook for “customer support” – they ask for OTP to “reverse transaction”.
                 </div>
                 <div class="prevent-tip">
-                    <i class="fas fa-shield-check"></i> <span><strong>Safe:</strong> Always use official support numbers from app/website. No genuine support asks for OTP.</span>
+                    <i class="fas fa-circle-check"></i> <span><strong>Safe:</strong> Always use official support numbers from app/website. No genuine support asks for OTP.</span>
                 </div>
             </div>
 
             <!-- 7. Juice jacking / public wifi (medium) -->
             <div class="type-card danger-medium">
                 <div class="type-title">
-                    <i class="fas fa-wifi" style="color:#e6b422;"></i>
+                    <i class="fas fa-wifi" style="color:var(--warn);"></i>
                     <h3>Public WiFi / juice jacking</h3>
                 </div>
                 <div class="danger-badge">DANGER: MEDIUM (data interception)</div>
@@ -661,14 +557,14 @@
                     <i class="fas fa-question-circle"></i> <strong>How it occurs:</strong> Unencrypted WiFi or compromised charging stations intercept UPI data during transmission.
                 </div>
                 <div class="prevent-tip">
-                    <i class="fas fa-shield-check"></i> <span><strong>Safe:</strong> Avoid transacting on public WiFi. Disable file transfer when charging at public kiosks.</span>
+                    <i class="fas fa-circle-check"></i> <span><strong>Safe:</strong> Avoid transacting on public WiFi. Disable file transfer when charging at public kiosks.</span>
                 </div>
             </div>
 
             <!-- 8. OTP forwarding / fraud calls (high) -->
             <div class="type-card danger-high">
                 <div class="type-title">
-                    <i class="fas fa-message" style="color:#b63e32;"></i>
+                    <i class="fas fa-message" style="color:var(--block);"></i>
                     <h3>OTP forwarding scams</h3>
                 </div>
                 <div class="danger-badge">DANGER: HIGH (urgent deception)</div>
@@ -676,24 +572,26 @@
                     <i class="fas fa-question-circle"></i> <strong>How it occurs:</strong> Fraudsters call claiming "your parcel is held" or "KYC expired" and trick you into forwarding an SMS (which contains OTP).
                 </div>
                 <div class="prevent-tip">
-                    <i class="fas fa-shield-check"></i> <span><strong>Safe:</strong> Never forward OTPs or SMS to anyone. Banks never ask for forwarded messages.</span>
+                    <i class="fas fa-circle-check"></i> <span><strong>Safe:</strong> Never forward OTPs or SMS to anyone. Banks never ask for forwarded messages.</span>
                 </div>
             </div>
         </div>
 
         <!-- summary safety mantra -->
-        <div style="margin-top: 2rem; background: #ffffffdb; padding: 1.5rem 2rem; border-radius: 50px; text-align: center; border: 1px solid #acc9e5;">
-            <i class="fas fa-hexagon-exclamation" style="color:#b63e32; margin-right: 12px;"></i>
-            <span style="font-weight: 500;">Golden rule: </span>
-            <strong>STOP · THINK · VERIFY</strong> — UPI frauds rely on urgency and secrecy. No exception.
+        <div style="margin-top: var(--sp-3); background: var(--surface-raised); padding: var(--sp-2) var(--sp-3); border-radius: var(--radius-full); text-align: center; border: 1px solid var(--border);">
+            <i class="fas fa-triangle-exclamation" style="color:var(--accent); margin-right: 12px;"></i>
+            <span style="font-weight: 500; color: var(--text-secondary);">Golden rule: </span>
+            <strong style="color: var(--text-primary);">STOP · THINK · VERIFY</strong> — <span style="color: var(--text-secondary);">UPI frauds rely on urgency and secrecy. No exception.</span>
         </div>
     </div>
 
     <!-- subtle footer -->
-    <div style="padding: 1rem 2.5rem 1.5rem; border-top: 1px solid #d6e3f0; display: flex; justify-content: space-between; color:#4f6b85; font-size:0.85rem;">
+    <div style="padding: var(--sp-2) var(--sp-3); border-top: 1px solid var(--border); display: flex; justify-content: space-between; color:var(--text-tertiary); font-size:var(--text-micro); font-family: var(--font-mono);">
         <span><i class="far fa-clock"></i> analysis timestamp: {{ timestamp }}</span>
         <span><i class="fas fa-fingerprint"></i> ref: UPI-{{ prediction|default:"N" }}-{{ reference_id }}</span>
     </div>
 </div>
+</div>
+<script src="{% static 'js/design-system.js' %}"></script>
 </body>
 </html>
