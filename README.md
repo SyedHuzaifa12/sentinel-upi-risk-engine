@@ -10,7 +10,7 @@ before the money moves.**
 
 ## The problem
 
-UPI fraud in India is overwhelmingly **Authorised Push Payment (APP) fraud** — the
+UPI fraud in India is overwhelmingly **Authorised Push Payment  (APP) fraud** — the
 victim is socially engineered (a fake customer-support call, a swapped QR code, a
 "collect request" disguised as a refund) and **willingly authorises the payment**.
 Device fingerprint, PIN entry, and geolocation are all genuine, because it really is
