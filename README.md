@@ -164,7 +164,7 @@ cost in a vacuum.
   intelligence across institutions, which no single bank's data can provide alone.
 - **Genuine label feedback, with dispute lag modeled honestly.** This project's
   labels are generator ground truth, available instantly. Real fraud labels arrive
-  weeks later (dispute windows), and only for what got reported — which is exactly
+  weeks later (dispute windows), and only for what got reported — which is exactly 
   the selective-labelling bias below, but worse, because even "reviewed" real cases
   take a long time to resolve.
 - **Device fingerprinting depth.** `device_id` here is a flat identifier; real
