@@ -70,7 +70,7 @@ flowchart LR
     FL --> MODEL["cold / warm LightGBM<br/>(routed by payee history)"]
     MODEL --> CAL["isotonic calibration"]
     CAL --> POLICY["cost-based decision policy<br/>ALLOW / WARN / REVIEW / BLOCK"]
-    POLICY --> DLOG[("decision log<br/>Postgres, append-only")]
+    POLICY --> DLOG[("decision log<br/>Postgres, append-only")] 
 
     DLOG --> REVIEW["analyst review queue"]
     DLOG --> MON["monitoring dashboard"]
