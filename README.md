@@ -3,7 +3,7 @@
 **Real-time UPI transaction risk scoring — allow / warn / review / block, decided
 before the money moves.**
 
-> All data in this project is **synthetic** (see [Results](#results-honest)). This is a
+> All data in this project is **synthetic** (see [Results](#results-honest)). This  is a
 > systems/ML engineering portfolio project, not a production fraud model.
 
 ---
