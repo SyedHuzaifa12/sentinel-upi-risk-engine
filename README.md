@@ -15,7 +15,7 @@ victim is socially engineered (a fake customer-support call, a swapped QR code, 
 "collect request" disguised as a refund) and **willingly authorises the payment**.
 Device fingerprint, PIN entry, and geolocation are all genuine, because it really is
 the account holder, on their real device, choosing to send the money. That's
-structurally different from card fraud, where the signal is a *stolen* credential
+structurally different from card fraud, where the signal  is a *stolen* credential
 being used by someone who isn't the account holder.
 
 Two consequences shape this system:
