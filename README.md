@@ -45,7 +45,7 @@ analyst label → the monitoring dashboard updating. Shot list in
 [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md).*
 
 **Live demo:** not deployed publicly (synthetic-data portfolio project) — run it
-locally in about two minutes via [Quickstart](#quickstart) below.
+locally in about two minutes via [Quickstart](#quickstart) below. 
 
 ## Architecture
 
