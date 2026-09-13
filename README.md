@@ -77,7 +77,7 @@ flowchart LR
     DLOG --> BACKTEST["backtest harness"]
 ```
 
-## How it works
+## How it works 
 
 1. A raw payment event arrives (worker replay or a live API call) — just the fields
    a payment app actually knows: payer/payee VPA, amount, type, initiation mode,
