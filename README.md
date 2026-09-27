@@ -12,7 +12,7 @@ before the money moves.**
 
 UPI fraud in India is overwhelmingly **Authorised Push Payment  (APP) fraud** — the
 victim is socially engineered (a fake customer-support call, a swapped QR code, a
-"collect request" disguised as a refund) and **willingly authorises the payment**.
+"collect request" disguised as a refund) and **willingly authorises the payment**. 
 Device fingerprint, PIN entry, and geolocation are all genuine, because it really is
 the account holder, on their real device, choosing to send the money. That's
 structurally different from card fraud, where the signal  is a *stolen* credential
