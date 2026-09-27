@@ -8,7 +8,7 @@ before the money moves.**
 
 --- 
 
-## The problem
+## The problem 
 
 UPI fraud in India is overwhelmingly **Authorised Push Payment  (APP) fraud** — the
 victim is socially engineered (a fake customer-support call, a swapped QR code, a
